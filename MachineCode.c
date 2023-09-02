@@ -83,9 +83,6 @@ void getAInstruction(char *asmLine, char *instruction) {
 
 void getCInstruction(char *asmLine, char *instruction) {
   initCInstruction(instruction);
-  if (strchr(asmLine, 'M')) {
-    *(instruction + MODE) = '1';
-  }
   char *dest, *comp, *jump;
   char *pSemicolon = index(asmLine, ';');
   if (pSemicolon != NULL) {
@@ -128,6 +125,9 @@ void getDestInstruction(char *dest, char* instruction) {
 }
 
 void getCompInstruction(char *comp, char* instruction) {
+  if (strchr(comp, 'M')) {
+    *(instruction + MODE) = '1';
+  }
   char *compInstruction;
   int numEntries = sizeof(compLookup) / sizeof(compLookup[0]);
   for (int i = 0; i < numEntries; i ++) {
