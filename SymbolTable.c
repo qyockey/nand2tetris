@@ -53,6 +53,10 @@ void symbolTableInit() {
   symbolTableAdd("THAT", 4);
 }
 
+bool symbolTableContains(char *symbol) {
+  return lookup(symbol) != NULL;
+}
+
 void symbolTableAdd(char *symbol, unsigned value) {
   Entry *newEntry = (Entry *) malloc(sizeof(Entry));
   if (newEntry == NULL) {
