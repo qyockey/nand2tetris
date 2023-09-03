@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "MachineCode.h"
 
 #define COMMAND_LEN           18 // 16 bit instruction + \n + \0
 #define MODE                   3
@@ -15,14 +16,6 @@
 #define LOOKUP_COLS_PER_ENTRY  2
 #define ASM_COL                0
 #define HACK_COL               1
-
-void getAInstruction(char *asmLine, char *instruction);
-void getCInstruction(char *asmLine, char *instruction);
-void removeSpaces(char *instruction);
-void initCInstruction(char *instruction);
-void getDestInstruction(char *dest, char *asmLine);
-void getCompInstruction(char *comp, char *asmLine);
-void getJumpInstruction(char *jump, char *asmLine);
 
 static char *compLookup[][LOOKUP_COLS_PER_ENTRY] = {
   { "0",   "101010"},
