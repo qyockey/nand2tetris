@@ -4,6 +4,7 @@
 
 #include "Parser.c"
 #include "MachineCode.c"
+#include "SymbolTable.c"
 
 #define ASM_EXTENSION_LEN 3
 #define BIN_EXTENSION_LEN 4
@@ -16,19 +17,30 @@ static FILE *asmFile, *binFile;
 char *getBinFilename(char *asmFilename);
  
 int main(int argc, char **argv) {
+  symbolTableInit();
   if (argc != 2) {  // argv[0] = ./Main, argc[1] = asmFilename
     printf("Assembler takes 1 argument, the name of the file to assemble ending in .asm\n");
     exit(EXIT_FAILURE);
   }
   char *asmFilename = *++argv;
-  char *binFilename = getBinFilename(asmFilename);
-
-  // open files
   asmFile = fopen(asmFilename, "r");
   if (asmFile == NULL) {
     printf("File not found: %s\n", asmFilename);
     exit(EXIT_FAILURE);
   }
+
+  int lineNum = 0;
+  while ((getLine(asmLine, MAX_LINE, asmFile)) != NULL) {
+    lineNum++;
+    if (isLabel(asmLine)) {
+      symbolTableAdd(getLabel(asmLine), lineNum);
+    }
+  }
+
+  symbolTablePrint();
+  rewind(asmFile);
+
+  char *binFilename = getBinFilename(asmFilename);
   binFile = fopen(binFilename, "w");
   if (binFile == NULL) {
     printf("File not found: %s\n", binFilename);
@@ -36,17 +48,13 @@ int main(int argc, char **argv) {
   }
   free(binFilename);
 
-  while ((fgets(asmLine, MAX_LINE, asmFile)) != NULL) {
-    removeSpaces(asmLine);
-    removeComments(asmLine);
-    if (strlen(asmLine) > 0) {
-      if (isACommand(asmLine)) {
-        getAInstruction(asmLine, instruction);
-      } else {
-        getCInstruction(asmLine, instruction);
-      }
-      fputs(instruction, binFile);
+  while ((getLine(asmLine, MAX_LINE, asmFile)) != NULL) {
+    if (isACommand(asmLine)) {
+      getAInstruction(asmLine, instruction);
+    } else {
+      getCInstruction(asmLine, instruction);
     }
+    fputs(instruction, binFile);
   }
 
   fclose(asmFile);
