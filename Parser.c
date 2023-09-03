@@ -1,11 +1,34 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "Parser.h"
 
-int isACommand(char *command);
+char *getLine(char *asmLine, int maxLine, FILE *asmFile) {
+  asmLine = fgets(asmLine, maxLine, asmFile);
+  if (asmLine == NULL) {
+    return asmLine;
+  } 
+  removeComments(asmLine);
+  removeSpaces(asmLine);
+  if (strlen(asmLine) == 0) {
+    getLine(asmLine, maxLine, asmFile);
+  }
+  return asmLine;
+}
 
-int isACommand(char *command) {
-  // while (isspace(*command++));
-  return *command == '@';
+bool isLabel(char *asmLine) {
+  return *asmLine == '(';
+}
+
+char *getLabel(char *asmLine) {
+  asmLine++;
+  char *rightParenIndex = strchr(asmLine, ')');
+  *rightParenIndex = '\0';
+  return asmLine;
+}
+
+bool isACommand(char *asmLine) {
+  return *asmLine == '@';
 }
 
 void removeSpaces(char *asmLine) {
