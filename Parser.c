@@ -1,18 +1,20 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 #include "Parser.h"
 
+void removeSpaces(char *asmLine);
+void removeComments(char *asmLine);
+
 char *getLine(char *asmLine, int maxLine, FILE *asmFile) {
-  asmLine = fgets(asmLine, maxLine, asmFile);
-  if (asmLine == NULL) {
-    return asmLine;
-  } 
-  removeComments(asmLine);
-  removeSpaces(asmLine);
-  if (strlen(asmLine) == 0) {
-    getLine(asmLine, maxLine, asmFile);
-  }
+  do {
+    if (fgets(asmLine, maxLine, asmFile) == NULL) {
+      return NULL;
+    } 
+    removeComments(asmLine);
+    removeSpaces(asmLine);
+  } while (strlen(asmLine) == 0);
   return asmLine;
 }
 

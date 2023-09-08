@@ -5,6 +5,12 @@
 
 #define TABLE_SIZE 100
 
+typedef struct node {
+  char *symbol;
+  unsigned value;
+  struct node *next;
+} Entry;
+
 static Entry *symbolTable[TABLE_SIZE];
 
 static unsigned hash(char *symbol) {
@@ -18,7 +24,7 @@ static unsigned hash(char *symbol) {
 static Entry *lookup(char *symbol) {
   unsigned hashVal = hash(symbol);
   Entry *entry = symbolTable[hashVal];
-  while (entry->next != NULL) {
+  while (entry != NULL) {
     if (strcmp(entry->symbol, symbol) == 0) {
       return entry;
     }
@@ -63,7 +69,12 @@ void symbolTableAdd(char *symbol, unsigned value) {
     printf("malloc error\n");
     exit(EXIT_FAILURE);
   }
-  newEntry->symbol = symbol;
+  newEntry->symbol = (char *) malloc((strlen(symbol) + 1) * sizeof(char));
+  if (newEntry->symbol == NULL) {
+    printf("malloc error\n");
+    exit(EXIT_FAILURE);
+  }
+  strcpy(newEntry->symbol, symbol);
   newEntry->value = value;
   newEntry->next = NULL;
   unsigned hashVal = hash(symbol);
