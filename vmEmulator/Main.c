@@ -9,13 +9,14 @@
 #define ASM_EXTENSION_LEN 4
 #define VM_EXTENSION  ".vm"
 #define ASM_EXTENSION ".asm"
-#define MAX_LINE 40
+#define MAX_VM_LINE   80
+#define MAX_ASM_LINE 160
 
 static char *getAsmFilename(char *vmFilename);
 
 int main(int argc, char *argv[]) {
-  static char vmLine[MAX_LINE];
-  static char asmLine[MAX_LINE];
+  static char vmLine[MAX_VM_LINE];
+  static char asmLine[MAX_ASM_LINE];
   static FILE *vmFile, *asmFile;
 
   if (argc < 2) {  // argv[0] = VmEmulator, argc[1] = file1.vm ...
@@ -24,8 +25,8 @@ int main(int argc, char *argv[]) {
   for (int vmFileIndex = 1; vmFileIndex < argc; vmFileIndex++) {
     char *vmFilename = argv[vmFileIndex];
     if (strstr(vmFilename, VM_EXTENSION) - vmFilename !=
-        strlen(vmFilename) - ASM_EXTENSION_LEN) {
-      printf("Error: %s not supported, must end in %s", vmFilename, VM_EXTENSION);
+        strlen(vmFilename) - VM_EXTENSION_LEN) {
+      printf("Error: %s not supported, must end in %s\n", vmFilename, VM_EXTENSION);
       continue;
     }
     vmFile = fopen(vmFilename, "r");
@@ -42,8 +43,9 @@ int main(int argc, char *argv[]) {
     }
     free(asmFilename);
 
-    while ((getLine(vmLine, MAX_LINE, vmFile)) != NULL) {
-      printf("%s\n", vmLine);
+    while ((getLine(vmLine, MAX_VM_LINE, vmFile)) != NULL) {
+      getAsmInstructions(vmLine, asmLine);
+      fputs(asmLine, asmFile);
     }
 
     fclose(vmFile);
