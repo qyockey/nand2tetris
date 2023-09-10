@@ -1,1 +1,1 @@
-void getAsmCommands(char *vmLine, char *asmLine);
+void getAsmInstructions(char *vmLine, char *asmLine);
