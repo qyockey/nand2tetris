@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wpedantic -Werror -I.
+CFLAGS = -Wall -Wpedantic -Werror -I. -g
 SRCS = Main.c AssemblyGenerator.c Parser.c
 OBJS = $(SRCS:.c=.o)
 TARGET = ../../VmEmulator
