@@ -5,6 +5,7 @@
 #include "Parser.h"
 
 void removeComments(char *vmLine);
+void removeNewlines(char *vmLine);
 
 char *getLine(char *vmLine, int maxLine, FILE *vmFile) {
   do {
@@ -12,6 +13,7 @@ char *getLine(char *vmLine, int maxLine, FILE *vmFile) {
       return NULL;
     } 
     removeComments(vmLine);
+    removeNewlines(vmLine);
   } while (strlen(vmLine) == 0);
   return vmLine;
 }
@@ -23,10 +25,11 @@ void removeComments(char *vmLine) {
   }
 }
 
-bool isStack(char *vmLine) {
-
-}
-
-bool isArithmetic(char *vmLine) {
-
+void removeNewlines(char *vmLine) {
+  while ((*vmLine) != '\0') {
+    if (*vmLine == '\r' || *vmLine == '\n') {
+      *vmLine = '\0';
+    }
+    vmLine++;
+  }
 }
