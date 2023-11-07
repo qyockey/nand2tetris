@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wpedantic -Werror -I.
-SRCS = Main.c MachineCode.c Parser.c SymbolTable.c
+SRCS = main.c machine_code.c parser.c symbol_table.c
 OBJS = $(SRCS:.c=.o)
-TARGET = ../../HackAssembler
+TARGET = ../../hack_assembler
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
@@ -12,3 +12,4 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
+

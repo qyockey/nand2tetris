@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wpedantic -Werror -I. -g
-SRCS = Main.c AssemblyGenerator.c Parser.c
+SRCS = main.c assembly_generator.c parser.c
 OBJS = $(SRCS:.c=.o)
-TARGET = ../../VmEmulator
+TARGET = ../../vm_emulator
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
@@ -12,3 +12,4 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
+
