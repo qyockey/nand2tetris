@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wpedantic -Werror -I. -g
-SRCS = main.c asm_generator.c parser.c
+CFLAGS = -Wall -Wpedantic -I. -g
+SRCS = main.c asm_writer.c error_check.c parser.c linked_list.c
 OBJS = $(SRCS:.c=.o)
 TARGET = ../../vm_translator
 
