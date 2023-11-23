@@ -26,8 +26,6 @@ struct cmd_args {
 };
 
 static void write_vm_comment(const char *vm_line);
-static void write_int(int num);
-static void write_str(const char *str);
 static void write_push(const struct cmd_args *args);
 static void write_push_segment(const char *segment, int value);
 static void write_pop(const struct cmd_args *args);
@@ -41,11 +39,11 @@ static void write_gt(const struct cmd_args *args);
 static void write_and(const struct cmd_args *args);
 static void write_or(const struct cmd_args *args);
 static void write_not(const struct cmd_args *args);
-static void write_binary_op(const char *binary_op);
-static void write_comp(const char *comp, int count);
 static void write_label(const struct cmd_args *args);
 static void write_goto(const struct cmd_args *args);
 static void write_if_goto(const struct cmd_args *args);
+static void write_binary_op(const char binary_op);
+static void write_comp(const char *comp, int count);
 
 struct vm_command {
   enum commands operator;
@@ -84,9 +82,10 @@ void writer_init(FILE *out_file, char *out_file_root_name) {
 }
 
 static void write_vm_comment(const char *vm_line) {
-  write_str("// ");
-  write_str(vm_line);
-  write_str("\n");
+  fprintf(asm_file,
+      "// %s\n",
+      vm_line
+  );
 }
 
 static struct vm_command *get_command(const char *operator) {
@@ -106,15 +105,7 @@ void write_asm_instructions(const char *vm_line) {
   sscanf(vm_line, "%s %s %d", operator, args->operand, &args->value);
   const struct vm_command *cmd = get_command(operator);
   cmd->write_function(args);
-  write_str("\n");
-}
-
-static void write_str(const char *str) {
-  fprintf(asm_file, "%s", str);
-}
-
-static void write_int(int num) {
-  fprintf(asm_file, "%d", num);
+  fprintf(asm_file, "\n");
 }
 
 static void write_push(const struct cmd_args *args) {
@@ -132,59 +123,56 @@ static void write_push(const struct cmd_args *args) {
     write_push_segment("THAT", args->value);
   } else if (strcmp(args->operand, "constant") == EXIT_SUCCESS) {
     // push i
-    write_str("@");
-    write_int(args->value);
-    write_str("\n");
-    write_str("D=A\n");
-    write_str(push_instructions);
+    fprintf(asm_file,
+        "@%d\n"
+        "D=A\n"
+        "%s",
+        args->value, push_instructions
+    );
   } else if (strcmp(args->operand, "static") == EXIT_SUCCESS) {
     // push variable foo.i
-    write_str("@");
-    write_str(root_file_name);
-    write_str(".");
-    write_int(args->value);
-    write_str("\n");
-    write_str("D=M\n");
-    write_str(push_instructions);
+    fprintf(asm_file,
+        "@%s.%d\n"
+        "D=M\n"
+        "%s",
+        root_file_name, args->value, push_instructions
+    );
   } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
     // push RAM[*(5+i)]
-    write_str("@R");
-    write_int(TEMP_START + args->value);
-    write_str("\n");
-    write_str("D=M\n");
-    write_str(push_instructions);
+    fprintf(asm_file,
+        "@R%d\n"
+        "D=M\n"
+        "%s",
+        TEMP_START + args->value, push_instructions
+    );
   } else if (strcmp(args->operand, "pointer") == EXIT_SUCCESS) {
     // 0 => push this
     // 1 => push that
-    write_str("@");
+    fprintf(asm_file, "@");
     if (args->value == 0) {
-      write_str("THIS");
+      fprintf(asm_file, "THIS");
     } else if (args->value == 1) {
-      write_str("THAT");
+      fprintf(asm_file, "THAT");
     }
-    write_str(""
+    fprintf(asm_file,
         "\n"
         "D=M\n"
+        "%s",
+        push_instructions
     );
-    write_str(push_instructions);
   }
 }
 
 static void write_push_segment(const char *segment, int value) {
-  write_str("@");
-  write_str(segment);
-  write_str(""
-      "\n"
+  fprintf(asm_file,
+      "@%s\n"
       "D=M\n"
-      "@"
-  );
-  write_int(value);
-  write_str(""
-      "\n"
+      "@%d\n"
       "A=D+A\n"
       "D=M\n"
+      "%s",
+      segment, value, push_instructions
   );
-  write_str(push_instructions);
 }
 
 static void write_pop(const struct cmd_args *args) {
@@ -202,47 +190,39 @@ static void write_pop(const struct cmd_args *args) {
     write_pop_segment("THAT", args->value);
   } else if (strcmp(args->operand, "static") == EXIT_SUCCESS) {
     // pop variable foo.i
-    write_str(""
+    fprintf(asm_file,
         "@SP\n"
         "AM=M-1\n"
         "D=M\n"
-        "@"
-    );
-    write_str(root_file_name);
-    write_str(".");
-    write_int(args->value);
-    write_str(""
-        "\n"
-        "M=D\n"
+        "@%s.%d\n"
+        "M+D\n",
+        root_file_name, args->value
     );
   } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
     // pop RAM[*(5+i)]
-    write_str(""
+    fprintf(asm_file,
         "@SP\n"
         "AM=M-1\n"
         "D=M\n"
-        "@R"
-    );
-    write_int(TEMP_START + args->value);
-    write_str(""
-        "\n"
-        "M=D\n"
+        "@R%d\n"
+        "M=D\n",
+        args->value
     );
   } else if (strcmp(args->operand, "pointer") == EXIT_SUCCESS) {
     // 0 => pop this
     // 1 => pop that
-    write_str(""
+    fprintf(asm_file,
         "@SP\n"
         "AM=M-1\n"
         "D=M\n"
         "@"
     );
     if (args->value == 0) {
-      write_str("THIS");
+      fprintf(asm_file, "THIS");
     } else if (args->value == 1) {
-      write_str("THAT");
+      fprintf(asm_file, "THAT");
     }
-    write_str(""
+    fprintf(asm_file,
         "\n"
         "M=D\n"
     );
@@ -250,40 +230,33 @@ static void write_pop(const struct cmd_args *args) {
 }
 
 static void write_pop_segment(const char *segment, int value) {
-  write_str("@");
-  write_str(segment);
-  write_str(""
-      "\n"
+  fprintf(asm_file,
+      "@%s\n"
       "D=M\n"
-      "@"
-  );
-  write_int(value);
-  write_str(""
-      "\n"
+      "@%d\n"
       "D=A+D\n"
       "@R13\n"
       "M=D\n"
-  );
-  write_str(""
       "@SP\n"
       "AM=M-1\n"
       "D=M\n"
       "@R13\n"
       "A=M\n"
-      "M=D\n"
+      "M=D\n",
+      segment, value
   );
 }
 
 static void write_add(__attribute__((unused)) const struct cmd_args *args) {
-  write_binary_op("+");
+  write_binary_op('+');
 }
 
 static void write_sub(__attribute__((unused)) const struct cmd_args *args) {
-  write_binary_op("-");
+  write_binary_op('-');
 }
 
 static void write_neg(__attribute__((unused)) const struct cmd_args *args) {
-  write_str(""
+  fprintf(asm_file,
       "@SP\n"
       "A=M-1\n"
       "M=-M\n"
@@ -309,31 +282,53 @@ static void write_gt(__attribute__((unused)) const struct cmd_args *args) {
 }
 
 static void write_and(__attribute__((unused)) const struct cmd_args *args) {
-  write_binary_op("&");
+  write_binary_op('&');
 }
 
 static void write_or(__attribute__((unused)) const struct cmd_args *args) {
-  write_binary_op("|");
+  write_binary_op('|');
 }
 
 static void write_not(__attribute__((unused)) const struct cmd_args *args) {
-  write_str(""
+  fprintf(asm_file,
       "@SP\n"
       "A=M-1\n"
       "M=!M\n"
   );
 }
 
-static void write_binary_op(const char *binary_op) {
-  write_str(""
+static void write_label(const struct cmd_args *args) {
+  fprintf(asm_file, "(%s)\n", args->operand);
+}
+
+static void write_goto(const struct cmd_args *args) {
+  fprintf(asm_file,
+      "@%s\n"
+      "0;JMP\n",
+      args->operand
+  );
+}
+
+static void write_if_goto(const struct cmd_args *args) {
+  fprintf(asm_file,
+      "@SP\n"
+      "AM=M-1\n"
+      "D=M\n"
+      "@%s\n"
+      "D;JNE\n",
+      args->operand
+  );
+}
+
+static void write_binary_op(const char binary_op) {
+  fprintf(asm_file,
       "@SP\n"
       "AM=M-1\n"
       "D=M\n"
       "A=A-1\n"
-      "M=M"
+      "M=M%cD\n",
+      binary_op
   );
-  write_str(binary_op);
-  write_str("D\n");
 }
 
 static void write_comp(const char *comp, int count) {
@@ -341,60 +336,21 @@ static void write_comp(const char *comp, int count) {
   assert_malloc_success((void *) label);
   sprintf(label, "%s%d", comp, count);
 
-  write_str(""
+  fprintf(asm_file,
       "@SP\n"
       "AM=M-1\n"
       "D=M\n"
       "A=A-1\n"
       "D=M-D\n"
       "M=-1\n"
-      "@"
-  );
-  write_str(label);
-  write_str(""
-      "\n"
-      "D;"
-  );
-  write_str(comp);
-  write_str(""
-      "\n"
+      "@%s\n"
+      "D;%s\n"
       "@SP\n"
       "A=M-1\n"
       "M=0\n"
+      "(%s)\n",
+      label, comp, label
   );
-  write_str("(");
-  write_str(label);
-  write_str(")\n");
   free(label);
-}
-
-static void write_label(const struct cmd_args *args) {
-  write_str("(");
-  write_str(args->operand);
-  write_str(")\n");
-}
-
-static void write_goto(const struct cmd_args *args) {
-  write_str("@");
-  write_str(args->operand);
-  write_str(""
-      "\n"
-      "0;JMP\n"
-  );
-}
-
-static void write_if_goto(const struct cmd_args *args) {
-  write_str(""
-      "@SP\n"
-      "AM=M-1\n"
-      "D=A+1\n"
-  );
-  write_str("@");
-  write_str(args->operand);
-  write_str(""
-      "\n"
-      "D;JNE\n"
-  );
-
 }
 
