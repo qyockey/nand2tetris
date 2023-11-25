@@ -1,6 +1,6 @@
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wpedantic -I. -g
-SRCS = main.c asm_writer.c error_check.c parser.c linked_list.c
+SRCS = main.c asm_writer.c error_check.c parser.c linked_list.c hash_table.c
 OBJS = $(SRCS:.c=.o)
 TARGET = ../../vm_translator
 
