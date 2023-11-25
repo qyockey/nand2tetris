@@ -22,14 +22,14 @@ static void remove_newlines(char *vm_line);
 **     bytes in length
 *******************************************************************************/
 char *get_line(char *vm_line, int max_line, FILE *vm_file) {
-  do {
-    if (fgets(vm_line, max_line, vm_file) == NULL) {
-      return NULL;
-    } 
-    remove_comments(vm_line);
-    remove_newlines(vm_line);
-  } while (strlen(vm_line) == 0);
-  return vm_line;
+    do {
+        if (fgets(vm_line, max_line, vm_file) == NULL) {
+            return NULL;
+        } 
+        remove_comments(vm_line);
+        remove_newlines(vm_line);
+    } while (strlen(vm_line) == 0);
+    return vm_line;
 }
 
 /*******************************************************************************
@@ -41,10 +41,10 @@ char *get_line(char *vm_line, int max_line, FILE *vm_file) {
 ** Post-Conditions: N/A
 *******************************************************************************/
 static void remove_comments(const char *vm_line) {
-  char *comment_start = strstr(vm_line, "//");
-  if (comment_start) {
-    *comment_start = '\0';
-  }
+    char *comment_start = strstr(vm_line, "//");
+    if (comment_start) {
+        *comment_start = '\0';
+    }
 }
 
 /*******************************************************************************
@@ -57,11 +57,11 @@ static void remove_comments(const char *vm_line) {
 ** Post-Conditions: N/A
 *******************************************************************************/
 static void remove_newlines(char *vm_line) {
-  while ((*vm_line) != '\0') {
-    if (*vm_line == '\r' || *vm_line == '\n') {
-      *vm_line = '\0';
+    while ((*vm_line) != '\0') {
+        if (*vm_line == '\r' || *vm_line == '\n') {
+            *vm_line = '\0';
+        }
+        vm_line++;
     }
-    vm_line++;
-  }
 }
 
