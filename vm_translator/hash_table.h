@@ -15,7 +15,7 @@ typedef struct {
     int size;
 } hash_table; 
 
-hash_table *new_hash_table(int size);
+hash_table *hash_table_init(unsigned size);
 bool hash_table_contains(const hash_table *table, const char *key);
 void hash_table_add(const hash_table *table, const char *key, unsigned value);
 unsigned hash_table_get(const hash_table *table, const char *key);

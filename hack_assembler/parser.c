@@ -22,9 +22,8 @@ bool is_label(char *asm_line) {
   return *asm_line == '(';
 }
 
-char *get_label(char *asm_line) {
-  asm_line++;
-  char *right_paren_index = strchr(asm_line, ')');
+char *get_label(const char *asm_line) {
+  char *right_paren_index = strchr(asm_line + 1, ')');
   *right_paren_index = '\0';
   return asm_line;
 }
@@ -46,9 +45,9 @@ void remove_spaces(char *asm_line) {
 }
 
 void remove_comments(char *asm_line) {
-  char *p_inline = strstr(asm_line, "//");
-  if (p_inline) {
-    *p_inline = '\0';
+  char *comment_start = strstr(asm_line, "//");
+  if (comment_start) {
+    *comment_start = '\0';
   }
 }
 

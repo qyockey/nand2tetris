@@ -49,13 +49,15 @@ typedef struct {
 } input_info;
 
 static input_info parse_input_info(int argc, char **argv);
-static linked_list *get_vm_file_names(const input_info input);
+static linked_list *get_vm_file_paths(const input_info input);
 static char *get_root_file_name(const input_info input);
+static char *get_absolute_path(const char *dir_path, const char *file_name);
 static char *get_parent_dir_path(const char *path);
 static char *get_asm_file_path(const input_info input);
-static void generate_asm(FILE *vm_file);
+static void generate_asm(const char *vm_file_path);
 static bool is_dir(const char *path);
 static bool is_vm_file(const char *file_path);
+static bool contains_sys_file(const linked_list *vm_file_paths);
 
 /*******************************************************************************
 ** Function: main
@@ -68,31 +70,23 @@ static bool is_vm_file(const char *file_path);
 *******************************************************************************/
 int main(int argc, char *argv[]) {
     const input_info input = parse_input_info(argc, argv);
-    linked_list *vm_file_names = get_vm_file_names(input);
-    char *asm_file_path = get_asm_file_path(input);
-    printf("Writing to output file \"%s\"\n", asm_file_path);
-    FILE *asm_file = fopen(asm_file_path, "w");
-    assert_file_opened(asm_file, asm_file_path);
-    char *root_file_name = get_root_file_name(input);
-    writer_init(asm_file, root_file_name);
-    free(root_file_name);
-    list_node *node = vm_file_names->head;
-    while (node) {
-        const char *vm_file_name = node->data;
-        printf("Compiling vm file \"%s\"\n", vm_file_name);
-        FILE *vm_file = fopen(vm_file_name, "r");
-        assert_file_opened(vm_file, vm_file_name);
-        generate_asm(vm_file);
-        assert_condition(fclose(vm_file) == EXIT_SUCCESS,
-                "Error closing file %s\n", vm_file_name);
-        node = node->next;
-    }
-    list_dispose(vm_file_names);
-    assert_condition(fclose(asm_file) == EXIT_SUCCESS,
-            "Error closing file %s\n", asm_file_path);
-    free(asm_file_path);
+    linked_list *vm_file_paths = get_vm_file_paths(input);
+    char *asm_file_absolute_path = get_asm_file_path(input);
+    printf("Writing to output file `%s'\n", asm_file_absolute_path);
     free(input.file_absolute_path);
     free(input.dir_absolute_path);
+    writer_init(asm_file_absolute_path);
+    free(asm_file_absolute_path);
+    if (contains_sys_file(vm_file_paths)) {
+        write_bootstrap();
+    }
+    for (list_node *node = vm_file_paths->head; node; node = node->next) {
+        const char *vm_file_absolute_path = node->data;
+        printf("Compiling vm file `%s'\n", vm_file_absolute_path);
+        generate_asm(vm_file_absolute_path);
+    }
+    writer_dispose();
+    list_dispose(vm_file_paths);
     printf("Compilation finished successfully\n");
 
     return EXIT_SUCCESS;
@@ -115,19 +109,25 @@ int main(int argc, char *argv[]) {
 **     null, but all other fields will be non-null.
 *******************************************************************************/
 static input_info parse_input_info(int argc, char **argv) {
+    assert_condition(argc == 2,
+            "Usage:\n\n"
+            "To compile a single vm file:\n"
+            "$ vm_translator path/to/file.vm\n\n"
+            "To compile all vm files in a directory:\n"
+            "$ vm_translator path/to/dir\n\n"
+    );
     input_info input;
-    assert_condition(argc == 2, "Usage: $ vm_translator dir_or_vm_path\n");
     char *relative_path = argv[1];
     if (is_dir(relative_path)) {
         input.type = DIRECTORY;
         input.file_absolute_path = NULL;
-        input.dir_absolute_path = realpath(relative_path, NULL);
+        input.dir_absolute_path = safe_realpath(relative_path, NULL);
     } else if (is_vm_file(relative_path)) {
         input.type = VM_FILE;
-        input.file_absolute_path = realpath(relative_path, NULL);
+        input.file_absolute_path = safe_realpath(relative_path, NULL);
         input.dir_absolute_path = get_parent_dir_path(input.file_absolute_path);
     } else {
-        fprintf(stderr, "Error: invalid directory or .vm file: \"%s\"\n",
+        fprintf(stderr, "Error: invalid directory or .vm file: `%s'\n",
                 relative_path);
         exit(EXIT_FAILURE);
     }
@@ -136,7 +136,7 @@ static input_info parse_input_info(int argc, char **argv) {
 
 
 /*******************************************************************************
-** Function: get_vm_file_names
+** Function: get_vm_file_paths
 ** Description: Return a singly-linked list containing absoute paths to all .vm
 **     files to compile
 ** Parameters:
@@ -145,36 +145,32 @@ static input_info parse_input_info(int argc, char **argv) {
 ** Post-Conditions: Returned list is non-null and contains names of inputted .vm
 **     file or names of all .vm files in inputted directory
 *******************************************************************************/
-static linked_list *get_vm_file_names(const input_info input) {
-    linked_list *vm_file_names = new_linked_list();
+static linked_list *get_vm_file_paths(const input_info input) {
+    linked_list *vm_file_paths = new_linked_list();
     DIR *dir = NULL;
     char *file_path_copy = NULL;
     switch (input.type) {
         case DIRECTORY:
-            dir = opendir(input.dir_absolute_path);
-            assert_dir_opened(dir, input.dir_absolute_path);
+            dir = safe_opendir(input.dir_absolute_path);
             const struct dirent *dir_entry;
-            char absolute_path[PATH_MAX];
-            sprintf(absolute_path, "%s/", input.dir_absolute_path);
-            char *file_name_start = absolute_path + strlen(absolute_path);
             while ((dir_entry = readdir(dir)) != NULL) {
                 const char *file_name = dir_entry->d_name;
-                sprintf(file_name_start, "%s", file_name);
+                char *absolute_path = get_absolute_path(
+                        input.dir_absolute_path, file_name);
                 if (is_vm_file(absolute_path)) {
-                    char *absolute_path_copy = strdup(absolute_path);
-                    list_append(vm_file_names, absolute_path_copy);
+                    list_append(vm_file_paths, absolute_path);
+                } else {
+                    free(absolute_path);
                 }
             }
-            assert_condition(closedir(dir) == EXIT_SUCCESS, 
-                    "Error closing directory \"%s\"\n", input.dir_absolute_path);
+            safe_closedir(dir);
             break;
         case VM_FILE:
-            file_path_copy = strdup(input.file_absolute_path);
-            assert_malloc_success(file_path_copy);
-            list_append(vm_file_names, file_path_copy);
+            file_path_copy = safe_strdup(input.file_absolute_path);
+            list_append(vm_file_paths, file_path_copy);
             break;
     }
-    return vm_file_names;
+    return vm_file_paths;
 }
 
 /*******************************************************************************
@@ -195,18 +191,36 @@ static char *get_root_file_name(const input_info input) {
     switch (input.type) {
         case DIRECTORY:
             dir_name = strrchr(input.dir_absolute_path, '/') + 1;
-            root_file_name = strdup(dir_name);
-            assert_malloc_success((void *) root_file_name);
+            root_file_name = safe_strdup(dir_name);
             break;
         case VM_FILE:
             file_name = strrchr(input.file_absolute_path, '/') + 1;
             root_len = strlen(file_name) - VM_EXTENSION_LEN;
-            root_file_name = malloc(root_len * sizeof(char));
-            assert_malloc_success((void *) root_file_name);
+            root_file_name = safe_malloc(root_len * sizeof(char));
             strncpy(root_file_name, file_name, root_len);
             break;
     }
     return root_file_name;
+}
+
+/*******************************************************************************
+** Function: get_file_name
+** Description: Returns the name of a file without an extension or directory
+**     path
+** Parameters:
+**     - file_path: path to file to get name of
+** Pre-Conditions: file_path is non-null
+** Post-Conditions: Return value is non-null and contains no '/' or '.'
+**     characters
+*******************************************************************************/
+static char *get_file_name(const char *file_path) {
+    const char *file_name_start = strrchr(file_path, '/') + 1;
+    const char *file_name_end = strrchr(file_path, '.') - 1;
+    size_t name_size = (file_name_end - file_name_start + NULL_TERMINAOTR_LEN)
+            * sizeof(char);
+    char *file_name = safe_malloc(name_size);
+    strncpy(file_name, file_name_start, name_size);
+    return file_name;
 }
 
 /*******************************************************************************
@@ -222,18 +236,22 @@ static char *get_parent_dir_path(const char *path) {
     char *parent_dir_path;
     // parent of root is root
     if (strcmp(path, "/") == EXIT_SUCCESS) {
-        parent_dir_path = strdup("/");
-        assert_malloc_success((void *) parent_dir_path);
+        parent_dir_path = safe_strdup("/");
         return parent_dir_path;
     }
     const char *parent_dir_end = strrchr(path, '/') - 1;
     assert_condition(parent_dir_end != NULL,
-            "Error: invalid absolute path \"%s\"\n", path);
+            "Error: invalid absolute path `%s'\n", path);
     size_t parent_dir_path_len = parent_dir_end - path + NULL_TERMINAOTR_LEN;
-    parent_dir_path = (char *) malloc(parent_dir_path_len * sizeof(char));
-    assert_malloc_success((void *) parent_dir_path);
+    parent_dir_path = safe_malloc(parent_dir_path_len * sizeof(char));
     strncpy(parent_dir_path, path, parent_dir_path_len);
     return parent_dir_path;
+}
+
+static char *get_absolute_path(const char *dir_path, const char *file_name) {
+    char absolute_path[PATH_MAX];
+    sprintf(absolute_path, "%s/%s", dir_path, file_name);
+    return safe_strdup(absolute_path);
 }
 
 /*******************************************************************************
@@ -252,8 +270,7 @@ static char *get_asm_file_path(const input_info input) {
     size_t input_absolute_path_len = strlen(input.dir_absolute_path);
     asm_path_len = input_absolute_path_len + 1 + root_name_len + 
             ASM_EXTENSION_LEN + NULL_TERMINAOTR_LEN;
-    asm_file_path = (char *) malloc(asm_path_len * sizeof(char));
-    assert_malloc_success((void *) asm_file_path);
+    asm_file_path = safe_malloc(asm_path_len * sizeof(char));
     sprintf(asm_file_path, "%s/%s%s", input.dir_absolute_path,
             root_file_name, ASM_EXTENSION);
     free(root_file_name);
@@ -273,7 +290,6 @@ static bool is_dir(const char *path) {
     struct stat path_stat;
     if (stat(path, &path_stat) != EXIT_SUCCESS) {
         // stat error
-        perror(path);
         return false;
     }
     // is directory
@@ -298,7 +314,6 @@ static bool is_vm_file(const char *file_path) {
     struct stat path_stat;
     if (stat(file_path, &path_stat) != EXIT_SUCCESS) {
         // stat error
-        perror(file_path);
         return false;
     }
     // is regular file
@@ -310,14 +325,38 @@ static bool is_vm_file(const char *file_path) {
 ** Description: Writes the compiled assembly code for each line of the given
 **     .vm file
 ** Parameters:
-**     - vm_file: file to compile
-** Pre-Conditions: vm_file is non-null
+**     - vm_file_path: path of file to compile
+** Pre-Conditions: vm_file_path is non-null
 ** Post-Conditions: N/A
 *******************************************************************************/
-static void generate_asm(FILE *vm_file) {
+static void generate_asm(const char *vm_file_path) {
     static char vm_line[MAX_VM_LINE];
+    FILE *vm_file = safe_fopen(vm_file_path, "r");
+    char *vm_file_name = get_file_name(vm_file_path);
     while ((get_line(vm_line, MAX_VM_LINE, vm_file)) != NULL) {
-        write_asm_instructions(vm_line);
+        write_asm_instructions(vm_line, vm_file_name);
     }
+    free(vm_file_name);
+    safe_fclose(vm_file);
+}
+
+/*******************************************************************************
+** Function: contains_sys_file
+** Description: Returns true if the provided linked list contains a string
+**     ending in "Sys.vm", false if not
+** Parameters:
+**     - vm_file_paths: linked list to search
+** Pre-Conditions: vm_file_paths is non-null has stores data of type char *
+** Post-Conditions: N/A
+*******************************************************************************/
+static bool contains_sys_file(const linked_list *vm_file_paths) {
+    for (list_node *node = vm_file_paths->head; node; node = node->next) {
+        const char *vm_file_absolute_path = node->data;
+        const char *file_name = strrchr(vm_file_absolute_path, '/') + 1;
+        if (strcmp(file_name, "Sys.vm") == EXIT_SUCCESS) {
+            return true;
+        }
+    }
+    return false;
 }
 

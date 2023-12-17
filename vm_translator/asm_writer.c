@@ -18,6 +18,25 @@
 #define CALL_COUNT_WIDTH 4
 #define CALL_COUNT_TABLE_SIZE 100
 
+#define PUSH_D \
+        "@SP\n" \
+        "AM=M+1\n" \
+        "A=A-1\n" \
+        "M=D\n" \
+
+#define PUSH_A \
+        "D=A\n" \
+        PUSH_D
+
+#define PUSH_M \
+        "D=M\n" \
+        PUSH_D
+
+#define POP_D \
+        "@SP\n" \
+        "AM=M-1\n" \
+        "D=M\n"
+
 enum commands { 
     PUSH, POP, ADD, SUB, NEG, EQ, LT, GT, AND, OR, NOT, LABEL, GOTO, IF_GOTO,
     CALL, FUNCTION, RETURN
@@ -25,8 +44,15 @@ enum commands {
 
 typedef struct {
     char operand[MAX_STR_LEN];
-    int value;
+    unsigned value;
+    char vm_file_name[MAX_STR_LEN];
 } cmd_args;
+
+typedef struct {
+    enum commands operator;
+    char *name;
+    void (*write_function)(const cmd_args *args);
+} vm_command;
 
 static void write_vm_comment(const char *vm_line);
 static void write_push(const cmd_args *args);
@@ -52,13 +78,7 @@ static void write_binary_op(const char binary_op);
 static void write_comp(const char *comp, int count);
 static char *get_return_label(const char *function_name);
 
-typedef struct {
-    enum commands operator;
-    char *name;
-    void (*write_function)(const cmd_args *args);
-} vm_command;
-
-vm_command cmd_list[] = {
+static vm_command cmd_list[] = {
     { PUSH,     "push",     write_push     },
     { POP,      "pop",      write_pop      },
     { ADD,      "add",      write_add      },
@@ -78,18 +98,29 @@ vm_command cmd_list[] = {
     { RETURN,   "return",   write_return   }
 };
 
-static char *push_instructions = ""
-        "@SP\n"
-        "AM=M+1\n"
-        "A=A-1\n"
-        "M=D\n";
-
 static FILE *asm_file;
-static char *root_file_name;
+static hash_table *call_counts;
 
-void writer_init(FILE *out_file, char *out_file_root_name) {
-    asm_file = out_file;
-    root_file_name = out_file_root_name;
+void writer_init(const char *asm_file_path) {
+    asm_file = safe_fopen(asm_file_path, "w");
+    call_counts = hash_table_init(CALL_COUNT_TABLE_SIZE);
+}
+
+void writer_dispose() {
+    safe_fclose(asm_file);
+    hash_table_dispose(call_counts);
+}
+
+void write_bootstrap() {
+    fprintf(asm_file, 
+            "// bootstrap code\n"
+            "@256\n"
+            "D=A\n"
+            "@SP\n"
+            "M=D\n"
+            "\n"
+    );
+    write_asm_instructions("call Sys.init 0", "Sys");
 }
 
 static void write_vm_comment(const char *vm_line) {
@@ -106,13 +137,14 @@ static vm_command *get_command(const char *operator) {
     exit(EXIT_FAILURE);
 }
 
-void write_asm_instructions(const char *vm_line) {
+void write_asm_instructions(const char *vm_line, const char *vm_file_name) {
     write_vm_comment(vm_line);
     char operator[MAX_STR_LEN];
-    cmd_args *args = (cmd_args *) malloc(sizeof(struct cmd_args *));
-    sscanf(vm_line, "%s %s %d", operator, args->operand, &args->value);
+    cmd_args args;
+    sscanf(vm_line, "%s %s %u", operator, args.operand, &(args.value));
+    strncpy(args.vm_file_name, vm_file_name, MAX_STR_LEN);
     const vm_command *cmd = get_command(operator);
-    cmd->write_function(args);
+    cmd->write_function(&args);
     fprintf(asm_file, "\n");
 }
 
@@ -133,25 +165,22 @@ static void write_push(const cmd_args *args) {
         // push i
         fprintf(asm_file,
                 "@%d\n"
-                "D=A\n"
-                "%s",
-                args->value, push_instructions
+                PUSH_A,
+                args->value
         );
     } else if (strcmp(args->operand, "static") == EXIT_SUCCESS) {
         // push variable foo.i
         fprintf(asm_file,
                 "@%s.%d\n"
-                "D=M\n"
-                "%s",
-                root_file_name, args->value, push_instructions
+                PUSH_M,
+                args->vm_file_name, args->value
         );
     } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
         // push RAM[*(5+i)]
         fprintf(asm_file,
                 "@R%d\n"
-                "D=M\n"
-                "%s",
-                TEMP_START + args->value, push_instructions
+                PUSH_M,
+                TEMP_START + args->value
         );
     } else if (strcmp(args->operand, "pointer") == EXIT_SUCCESS) {
         // 0 => push this
@@ -164,9 +193,7 @@ static void write_push(const cmd_args *args) {
         }
         fprintf(asm_file,
                 "\n"
-                "D=M\n"
-                "%s",
-                push_instructions
+                PUSH_M
         );
     }
 }
@@ -177,9 +204,8 @@ static void write_push_segment(const char *segment, int value) {
             "D=M\n"
             "@%d\n"
             "A=D+A\n"
-            "D=M\n"
-            "%s",
-            segment, value, push_instructions
+            PUSH_M,
+            segment, value
     );
 }
 
@@ -199,19 +225,15 @@ static void write_pop(const cmd_args *args) {
     } else if (strcmp(args->operand, "static") == EXIT_SUCCESS) {
         // pop variable foo.i
         fprintf(asm_file,
-                "@SP\n"
-                "AM=M-1\n"
-                "D=M\n"
+                POP_D
                 "@%s.%d\n"
-                "M+D\n",
-                root_file_name, args->value
+                "M=D\n",
+                args->vm_file_name, args->value
         );
     } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
         // pop RAM[*(5+i)]
         fprintf(asm_file,
-                "@SP\n"
-                "AM=M-1\n"
-                "D=M\n"
+                POP_D
                 "@R%d\n"
                 "M=D\n",
                 args->value + TEMP_START
@@ -220,9 +242,7 @@ static void write_pop(const cmd_args *args) {
         // 0 => pop this
         // 1 => pop that
         fprintf(asm_file,
-                "@SP\n"
-                "AM=M-1\n"
-                "D=M\n"
+                POP_D
                 "@"
         );
         if (args->value == 0) {
@@ -245,9 +265,7 @@ static void write_pop_segment(const char *segment, int value) {
             "D=A+D\n"
             "@R13\n"
             "M=D\n"
-            "@SP\n"
-            "AM=M-1\n"
-            "D=M\n"
+            POP_D
             "@R13\n"
             "A=M\n"
             "M=D\n",
@@ -279,13 +297,13 @@ static void write_eq(__attribute__((unused)) const cmd_args *args) {
 
 static void write_lt(__attribute__((unused)) const cmd_args *args) {
     static int lt_count = 0;
-    write_comp("JEQ", lt_count);
+    write_comp("JLT", lt_count);
     lt_count++;
 }
 
 static void write_gt(__attribute__((unused)) const cmd_args *args) {
     static int gt_count = 0;
-    write_comp("JEQ", gt_count);
+    write_comp("JGT", gt_count);
     gt_count++;
 }
 
@@ -319,9 +337,7 @@ static void write_goto(const cmd_args *args) {
 
 static void write_if_goto(const cmd_args *args) {
     fprintf(asm_file,
-            "@SP\n"
-            "AM=M-1\n"
-            "D=M\n"
+            POP_D
             "@%s\n"
             "D;JNE\n",
             args->operand
@@ -335,39 +351,19 @@ static void write_call(const cmd_args *args) {
     fprintf(asm_file,
             // push return_label
             "@%s\n"
-            "D=A\n"
-            "@SP\n"
-            "AM=M+1\n"
-            "A=A-1\n"
-            "M=D\n"
+            PUSH_A
             // push LCL
             "@LCL\n"
-            "D=M\n"
-            "@SP\n"
-            "AM=M+1\n"
-            "A=A-1\n"
-            "M=D\n"
+            PUSH_M
             // push ARG
             "@ARG\n"
-            "D=M\n"
-            "@SP\n"
-            "AM=M+1\n"
-            "A=A-1\n"
-            "M=D\n"
+            PUSH_M
             // push THIS
             "@THIS\n"
-            "D=M\n"
-            "@SP\n"
-            "AM=M+1\n"
-            "A=A-1\n"
-            "M=D\n"
+            PUSH_M
             // push THAT
             "@THAT\n"
-            "D=M\n"
-            "@SP\n"
-            "AM=M+1\n"
-            "A=A-1\n"
-            "M=D\n"
+            PUSH_M
             // LCL = SP
             "@SP\n"
             "D=M\n"
@@ -389,10 +385,10 @@ static void write_call(const cmd_args *args) {
 }
 
 static void write_function(const cmd_args *args) {
+    static const cmd_args constant_zero = {"constant", 0};
     const char *function_name = args->operand;
     int num_vars = args->value;
     fprintf(asm_file, "(%s)\n", function_name);
-    const cmd_args constant_zero = {"constant", 0};
     for (int i = 0; i < num_vars; i++) {
         write_push(&constant_zero);
     }
@@ -412,9 +408,7 @@ static void write_return(__attribute__((unused)) const cmd_args *args) {
             "@R14\n"
             "M=D\n"
             // *ARG = pop() <- return value into ARG[0]
-            "@SP\n"
-            "AM=M-1\n"
-            "D=M\n"
+            POP_D
             "@ARG\n"
             "A=M\n"
             "M=D\n"
@@ -460,9 +454,7 @@ static void write_return(__attribute__((unused)) const cmd_args *args) {
 
 static void write_binary_op(const char binary_op) {
     fprintf(asm_file,
-            "@SP\n"
-            "AM=M-1\n"
-            "D=M\n"
+            POP_D
             "A=A-1\n"
             "M=M%cD\n",
             binary_op
@@ -470,14 +462,11 @@ static void write_binary_op(const char binary_op) {
 }
 
 static void write_comp(const char *comp, int count) {
-    char *label = (char *) malloc(MAX_STR_LEN * sizeof(char));
-    assert_malloc_success((void *) label);
+    char *label = safe_malloc(MAX_STR_LEN * sizeof(char));
     sprintf(label, "%s%d", comp, count);
 
     fprintf(asm_file,
-            "@SP\n"
-            "AM=M-1\n"
-            "D=M\n"
+            POP_D
             "A=A-1\n"
             "D=M-D\n"
             "M=-1\n"
@@ -493,10 +482,6 @@ static void write_comp(const char *comp, int count) {
 }
 
 static char *get_return_label(const char *function_name) {
-    static const hash_table *call_counts = NULL;
-    if (!call_counts) {
-        call_counts = new_hash_table(CALL_COUNT_TABLE_SIZE);
-    }
     int call_count;
     if (hash_table_contains(call_counts, function_name)) {
         call_count = hash_table_get(call_counts, function_name);
@@ -508,8 +493,7 @@ static char *get_return_label(const char *function_name) {
     }
     size_t return_label_len = (strlen(function_name) + 5 /* strlen("$ret.") */
             + CALL_COUNT_WIDTH) * sizeof(char);
-    char *return_label = malloc(return_label_len);
-    assert_malloc_success(return_label);
+    char *return_label = safe_malloc(return_label_len);
     sprintf(return_label, "%s$ret.%0*d", function_name, CALL_COUNT_WIDTH,
             call_count);
     return return_label;

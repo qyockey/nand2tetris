@@ -1,23 +1,44 @@
+#include <dirent.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "error_check.h"
 
-void assert_dir_opened(const DIR *dir, const char *dir_name) {
-    assert_condition(dir != NULL, "Error opening directory \"%s\"\n", dir_name);
+void *safe_malloc(size_t size) {
+    void *ptr = malloc(size);
+    assert_nonnull(ptr, "Error allocating memory");
+    return ptr;
 }
 
-void assert_dir_closed(const DIR *dir, const char *dir_name) {
-    assert_condition(dir != NULL, "Error closing directory \"%s\"\n", dir_name);
+char *safe_strdup(const char *string) {
+    char *duplicate = strdup(string);
+    assert_nonnull(duplicate, "Error allocating memory");
+    return duplicate;
 }
 
-void assert_file_opened(const FILE *file, const char *file_name) {
-    assert_condition(file != NULL, "Error opening file \"%s\"\n", file_name);
+char *safe_realpath(const char *path, char *resolved_path) {
+    char *absolute_path = realpath(path, resolved_path);
+    assert_nonnull(absolute_path, "Error allocating memory");
+    return absolute_path;
 }
 
-void assert_file_closed(const FILE *file, const char *file_name) {
-    assert_condition(file != NULL, "Error closing file \"%s\"\n", file_name);
+FILE *safe_fopen(const char *file_path, const char *mode) {
+    FILE *file = fopen(file_path, mode);
+    assert_nonnull(file, "Error allocating memory");
+    return file;
 }
 
-void assert_malloc_success(const void *pointer) {
-    assert_condition(pointer != NULL,
-            "Error allocating memory with malloc, memory leak likely\n");
+void safe_fclose(FILE *file) {
+    assert_success(fclose(file), "Error closing file");
+}
+
+DIR *safe_opendir(const char *dir_path) {
+    DIR *dir = opendir(dir_path);
+    assert_nonnull(dir, "Error allocating memory");
+    return dir;
+}
+
+void safe_closedir(DIR *dir) {
+    assert_success(closedir(dir), "Error closing directory");
 }
 

@@ -1,3 +1,11 @@
+/*******************************************************************************
+** Program Filename: parser.c
+** Author: Quinn Yockey
+** Date: November 2023
+** Description: Simple functions to parse data from lines of .vm files following
+**     the format specified in the Nand2Tetris course
+*******************************************************************************/
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
