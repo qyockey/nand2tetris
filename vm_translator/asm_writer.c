@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,15 +8,11 @@
 #include "error_check.h"
 #include "hash_table.h"
 
-#define LCL 1
-#define ARG 2
-#define THIS 3
-#define THAT 4
 #define TEMP_START 5
-#define MAX_VM_CMD_LEN 8
-#define MAX_STR_LEN 50
-#define NUM_VM_CMDS 17
-#define CALL_COUNT_WIDTH 4
+#define MAX_OPERATOR_LEN 9
+#define MAX_OPERAND_LEN 9
+#define NUM_VM_OPERATORS 17
+#define CALL_COUNT_LEN 4
 #define CALL_COUNT_TABLE_SIZE 100
 
 #define PUSH_D \
@@ -38,7 +35,7 @@
         "D=M\n"
 
 typedef struct {
-    char operand[MAX_STR_LEN];
+    char operand[MAX_OPERAND_LEN];
     unsigned value;
 } cmd_args;
 
@@ -47,6 +44,8 @@ typedef struct {
     void (*write_function)(const cmd_args *args);
 } vm_command;
 
+static void write_vm_comment(const char *vm_line);
+static vm_command *get_command(const char *operator);
 static void write_vm_comment(const char *vm_line);
 static void write_push(const cmd_args *args);
 static void write_push_segment(const char *segment, int value);
@@ -67,8 +66,8 @@ static void write_if_goto(const cmd_args *args);
 static void write_call(const cmd_args *args);
 static void write_function(const cmd_args *args);
 static void write_return(const cmd_args *args);
-static void write_binary_op(const char binary_op);
-static void write_comp(const char *comp, int count);
+static void write_binary_operation(const char binary_operator);
+static void write_comparison(const char *jump_code, int count);
 static char *get_return_label(const char *function_name);
 
 static vm_command cmd_list[] = {
@@ -95,18 +94,48 @@ static FILE *asm_file;
 static char *current_vm_file_name;
 static hash_table *call_counts;
 
+/*******************************************************************************
+** Function: writer_init
+** Description: Initializes writer to start writing assembly instructions. Opens
+**     assembly file for writing and initializes a hash table to keep track of
+**     how many times functions are called.
+** Parameters:
+**     - asm_file_path: path of assembly file to write to
+** Pre-Conditions: asm_file_path is non-null
+** Post-Conditions: asm_file and call_counts are non-null
+*******************************************************************************/
 void writer_init(const char *asm_file_path) {
     asm_file = safe_fopen(asm_file_path, "w");
     call_counts = hash_table_init(CALL_COUNT_TABLE_SIZE);
 }
 
+/*******************************************************************************
+** Function: writer_dispose
+** Description: Frees all memory allocated to writer: closes assembly file,
+**     frees name of current vm file, and disposes of call count hash table
+** Parameters: void
+** Pre-Conditions: current_vm_file_name is allocated (set_current_vm_file_name
+**     has been called)
+** Post-Conditions: All memory allocated to writer is freed
+*******************************************************************************/
 void writer_dispose() {
     safe_fclose(asm_file);
     free(current_vm_file_name);
     hash_table_dispose(call_counts);
 }
 
+/*******************************************************************************
+** Function: write_bootstrap
+** Description: Writes assembly code to set stack pointer to 256, and then call
+**     the Sys.init subroutine
+** Parameters: void
+** Pre-Conditions: asm_file is non-null (writer_init has been called)
+** Post-Conditions: Bootstrap code has been written to asm_file,
+**     current_vm_file_name has been set to "Sys"
+*******************************************************************************/
 void write_bootstrap() {
+    assert_nonnull(asm_file, "Error: Cannot write bootstrap to uninitialized "
+            "assembly file\n");
     fprintf(asm_file, 
             "// bootstrap code\n"
             "@256\n"
@@ -119,19 +148,66 @@ void write_bootstrap() {
     write_asm_instructions("call Sys.init 0");
 }
 
+/*******************************************************************************
+** Function: set_current_vm_file_name
+** Description: Frees current_vm_file_name if it has been previously set, then 
+**     sets it to provided name
+** Parameters:
+**     - vm_file_name: name of vm file currently being compiled
+** Pre-Conditions: vm_file_name is non-null
+** Post-Conditions: current_vm_file_name is allocated memory and contains
+**     provided name
+*******************************************************************************/
 void set_current_vm_file_name(const char *vm_file_name) {
+    assert_nonnull(vm_file_name, "Error: Cannot set current vm file name to "
+            "NULL\n");
     if (current_vm_file_name) {
         free(current_vm_file_name);
     }
     current_vm_file_name = safe_strdup(vm_file_name);
 }
 
+/*******************************************************************************
+** Function: write_asm_instructions
+** Description: Writes the compiled assembly code for a given line of vm code
+** Parameters:
+**     - vm_line: line of vm code to compile
+** Pre-Conditions: vm_line is non-null
+** Post-Conditions: Compiled assembly instructions have been writen to asm_file
+*******************************************************************************/
+void write_asm_instructions(const char *vm_line) {
+    assert_nonnull(vm_line, "Error: Cannot compile NULL vm line\n");
+    write_vm_comment(vm_line);
+    char operator[MAX_OPERATOR_LEN];
+    cmd_args args;
+    sscanf(vm_line, "%s %s %u", operator, args.operand, &(args.value));
+    const vm_command *cmd = get_command(operator);
+    cmd->write_function(&args);
+    fprintf(asm_file, "\n");
+}
+
+/*******************************************************************************
+** Function: write_vm_comment
+** Description: Writes a comment containing the contents of vm_line to asm_file
+** Parameters:
+**     - vm_line: Line of vm code to write a comment for
+** Pre-Conditions: vm_line is non-null
+** Post-Conditions: Comment containing vm_line has been written to asm_file
+*******************************************************************************/
 static void write_vm_comment(const char *vm_line) {
     fprintf(asm_file, "// %s\n", vm_line);
 }
 
-static vm_command *get_command(const char *operator) {
-    for (int cmd_index = 0; cmd_index < NUM_VM_CMDS; cmd_index++) {
+/*******************************************************************************
+** Function: get_vm_command
+** Description: Returns vm_command matching the given operator
+** Parameters:
+**     - operator: name of the vm command to match
+** Pre-Conditions: N/A
+** Post-Conditions: Return value is a valid vm_command
+*******************************************************************************/
+static vm_command *get_vm_command(const char *operator) {
+    for (int cmd_index = 0; cmd_index < NUM_VM_OPERATORS; cmd_index++) {
         if (strcmp(operator, cmd_list[cmd_index].name) == EXIT_SUCCESS) {
             return cmd_list + cmd_index;
         }
@@ -140,16 +216,15 @@ static vm_command *get_command(const char *operator) {
     exit(EXIT_FAILURE);
 }
 
-void write_asm_instructions(const char *vm_line) {
-    write_vm_comment(vm_line);
-    char operator[MAX_STR_LEN];
-    cmd_args args;
-    sscanf(vm_line, "%s %s %u", operator, args.operand, &(args.value));
-    const vm_command *cmd = get_command(operator);
-    cmd->write_function(&args);
-    fprintf(asm_file, "\n");
-}
-
+/*******************************************************************************
+** Function: write_push
+** Description: Writes compiled asm code for vm push operator
+** Parameters:
+**     - args->operand: Memory segment to push from
+**     - args->value: Address offset from beginning of segment
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Push asm instructions have been writen
+*******************************************************************************/
 static void write_push(const cmd_args *args) {
     if (strcmp(args->operand, "local") == EXIT_SUCCESS) {
         // push RAM[*segment_pointer + i]
@@ -200,6 +275,16 @@ static void write_push(const cmd_args *args) {
     }
 }
 
+/*******************************************************************************
+** Function: write_push_segment
+** Description: Writes push asm instructions for LCL, ARG, THIS, and THAT
+**     segnments
+** Parameters:
+**     - segment: Memory segment to push from
+**     - value: Adddress offset from begining of segment
+** Pre-Conditions: segment is non-null
+** Post-Conditions: Push asm instructions have been writen
+*******************************************************************************/
 static void write_push_segment(const char *segment, int value) {
     fprintf(asm_file,
             "@%s\n"
@@ -211,6 +296,15 @@ static void write_push_segment(const char *segment, int value) {
     );
 }
 
+/*******************************************************************************
+** Function: write_pop
+** Description: Writes compiled asm code for vm pop operator
+** Parameters:
+**     - args->operand: Memory segment to pop to
+**     - args->value: Address offset from beginning of segment
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Pop asm instructions have been writen
+*******************************************************************************/
 static void write_pop(const cmd_args *args) {
     if (strcmp(args->operand, "local") == EXIT_SUCCESS) {
         // pop RAM[*segment_pointer + i]
@@ -259,6 +353,16 @@ static void write_pop(const cmd_args *args) {
     }
 }
 
+/*******************************************************************************
+** Function: write_pop_segment
+** Description: Writes pop asm instructions for LCL, ARG, THIS, and THAT
+**     segnments
+** Parameters:
+**     - segment: Memory segment to pop to
+**     - value: Adddress offset from begining of segment
+** Pre-Conditions: segment is non-null
+** Post-Conditions: Pop asm instructions have been writen
+*******************************************************************************/
 static void write_pop_segment(const char *segment, int value) {
     fprintf(asm_file,
             "@%s\n"
@@ -275,14 +379,35 @@ static void write_pop_segment(const char *segment, int value) {
     );
 }
 
+/*******************************************************************************
+** Function: write_add
+** Description: Writes compiled asm code for vm add operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Add asm instructions have been writen
+*******************************************************************************/
 static void write_add(__attribute__((unused)) const cmd_args *args) {
-    write_binary_op('+');
+    write_binary_operation('+');
 }
 
+/*******************************************************************************
+** Function: write_sub
+** Description: Writes compiled asm code for vm sub operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Sub asm instructions have been writen
+*******************************************************************************/
 static void write_sub(__attribute__((unused)) const cmd_args *args) {
-    write_binary_op('-');
+    write_binary_operation('-');
 }
 
+/*******************************************************************************
+** Function: write_neg
+** Description: Writes compiled asm code for vm neg operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Neg asm instructions have been writen
+*******************************************************************************/
 static void write_neg(__attribute__((unused)) const cmd_args *args) {
     fprintf(asm_file,
             "@SP\n"
@@ -291,32 +416,74 @@ static void write_neg(__attribute__((unused)) const cmd_args *args) {
     );
 }
 
+/*******************************************************************************
+** Function: write_eq
+** Description: Writes compiled asm code for vm eq operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Eq asm instructions have been writen
+*******************************************************************************/
 static void write_eq(__attribute__((unused)) const cmd_args *args) {
     static int eq_count = 0;
-    write_comp("JEQ", eq_count);
+    write_comparison("JEQ", eq_count);
     eq_count++;
 }
 
+/*******************************************************************************
+** Function: write_lt
+** Description: Writes compiled asm code for vm lt operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Lt asm instructions have been writen
+*******************************************************************************/
 static void write_lt(__attribute__((unused)) const cmd_args *args) {
     static int lt_count = 0;
-    write_comp("JLT", lt_count);
+    write_comparison("JLT", lt_count);
     lt_count++;
 }
 
+/*******************************************************************************
+** Function: write_gt
+** Description: Writes compiled asm code for vm gt operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Gt asm instructions have been writen
+*******************************************************************************/
 static void write_gt(__attribute__((unused)) const cmd_args *args) {
     static int gt_count = 0;
-    write_comp("JGT", gt_count);
+    write_comparison("JGT", gt_count);
     gt_count++;
 }
 
+/*******************************************************************************
+** Function: write_and
+** Description: Writes compiled asm code for vm and operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: And asm instructions have been writen
+*******************************************************************************/
 static void write_and(__attribute__((unused)) const cmd_args *args) {
-    write_binary_op('&');
+    write_binary_operation('&');
 }
 
+/*******************************************************************************
+** Function: write_or
+** Description: Writes compiled asm code for vm or operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Or asm instructions have been writen
+*******************************************************************************/
 static void write_or(__attribute__((unused)) const cmd_args *args) {
-    write_binary_op('|');
+    write_binary_operation('|');
 }
 
+/*******************************************************************************
+** Function: write_not
+** Description: Writes compiled asm code for vm not operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Not asm instructions have been writen
+*******************************************************************************/
 static void write_not(__attribute__((unused)) const cmd_args *args) {
     fprintf(asm_file,
             "@SP\n"
@@ -325,10 +492,26 @@ static void write_not(__attribute__((unused)) const cmd_args *args) {
     );
 }
 
+/*******************************************************************************
+** Function: write_label
+** Description: Writes compiled asm code for vm label operator
+** Parameters:
+**     - args->operand: Label to write
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Label asm instruction has been writen
+*******************************************************************************/
 static void write_label(const cmd_args *args) {
     fprintf(asm_file, "(%s)\n", args->operand);
 }
 
+/*******************************************************************************
+** Function: write_goto
+** Description: Writes compiled asm code for vm goto operator
+** Parameters:
+**     - args->operand: Label to jump to
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Goto asm instructions have been writen
+*******************************************************************************/
 static void write_goto(const cmd_args *args) {
     fprintf(asm_file,
             "@%s\n"
@@ -337,6 +520,14 @@ static void write_goto(const cmd_args *args) {
     );
 }
 
+/*******************************************************************************
+** Function: write_if_goto
+** Description: Writes compiled asm code for vm if-goto operator
+** Parameters:
+**     - args->operand: Label to jump to if top of stack is non-zero
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: If-goto asm instructions have been writen
+*******************************************************************************/
 static void write_if_goto(const cmd_args *args) {
     fprintf(asm_file,
             POP_D
@@ -346,6 +537,15 @@ static void write_if_goto(const cmd_args *args) {
     );
 }
 
+/*******************************************************************************
+** Function: write_call
+** Description: Writes compiled asm code for vm call operator
+** Parameters:
+**     - args->operand: Name of function to call
+**     - args->value: Number of arguments in called function
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Call asm instruction has been writen
+*******************************************************************************/
 static void write_call(const cmd_args *args) {
     const char *function_name = args->operand;
     int num_args = args->value;
@@ -386,6 +586,15 @@ static void write_call(const cmd_args *args) {
     free(return_label);
 }
 
+/*******************************************************************************
+** Function: write_function
+** Description: Writes compiled asm code for vm function operator
+** Parameters:
+**     - args->operand: Name of function to call
+**     - args->value: Number of local variables in function
+** Pre-Conditions: args and args->operand are non-null
+** Post-Conditions: Function asm instruction has been writen
+*******************************************************************************/
 static void write_function(const cmd_args *args) {
     static const cmd_args constant_zero = {"constant", 0};
     const char *function_name = args->operand;
@@ -396,6 +605,13 @@ static void write_function(const cmd_args *args) {
     }
 }
 
+/*******************************************************************************
+** Function: write_return
+** Description: Writes compiled asm code for vm return operator
+** Parameters: unused
+** Pre-Conditions: N/A
+** Post-Conditions: Return asm instruction has been writen
+*******************************************************************************/
 static void write_return(__attribute__((unused)) const cmd_args *args) {
     fprintf(asm_file,
             // end_frame = LCL
@@ -454,19 +670,37 @@ static void write_return(__attribute__((unused)) const cmd_args *args) {
     );
 }
 
-static void write_binary_op(const char binary_op) {
+/*******************************************************************************
+** Function: write_binary_operation
+** Description: Writes compiled assembly code to perform a binary operation,
+**     one of add (+), sub (-), and (&), or or (|)
+** Parameters:
+**     - binary_operator: Symbol corresponding to relevant binary operation
+** Pre-Conditions: N/A
+** Post-Conditions: Asm instructions for relavant binary operation have been 
+**     written
+*******************************************************************************/
+static void write_binary_operation(const char binary_operator) {
     fprintf(asm_file,
             POP_D
             "A=A-1\n"
             "M=M%cD\n",
-            binary_op
+            binary_operator
     );
 }
 
-static void write_comp(const char *comp, int count) {
-    char *label = safe_malloc(MAX_STR_LEN * sizeof(char));
-    sprintf(label, "%s%d", comp, count);
-
+/*******************************************************************************
+** Function: write_comparison
+** Description: Writes compiled assembly code to perform a binary comparison
+**     one of eq (=), lt (<), or gt (>)
+** Parameters:
+**     - jump_code: Jump directive if comarison is a success (JEQ, JLT, or JGT)
+** Pre-Conditions: jump_code is non-null
+** Post-Conditions: Asm instructions for relavant comparison have been written
+*******************************************************************************/
+static void write_comparison(const char *jump_code, int count) {
+    char *label = safe_malloc(MAX_OPERATOR_LEN * sizeof(char));
+    sprintf(label, "%s%d", jump_code, count);
     fprintf(asm_file,
             POP_D
             "A=A-1\n"
@@ -478,11 +712,20 @@ static void write_comp(const char *comp, int count) {
             "A=M-1\n"
             "M=0\n"
             "(%s)\n",
-            label, comp, label
+            label, jump_code, label
     );
     free(label);
 }
 
+/*******************************************************************************
+** Function: get_return_label
+** Description: Returns a string containing the name of the calling function
+**     and the number of times a function has been called from within it
+** Parameters:
+**     - function_name: Name of calling function
+** Pre-Conditions: function_name is non-null
+** Post-Conditions: Return value is allocated memory and non-null
+*******************************************************************************/
 static char *get_return_label(const char *function_name) {
     unsigned call_count;
     if (hash_table_contains(call_counts, function_name)) {
@@ -494,9 +737,9 @@ static char *get_return_label(const char *function_name) {
         hash_table_add(call_counts, function_name, &call_count);
     }
     size_t return_label_len = (strlen(function_name) + 5 /* strlen("$ret.") */
-            + CALL_COUNT_WIDTH) * sizeof(char);
+            + CALL_COUNT_LEN) * sizeof(char);
     char *return_label = safe_malloc(return_label_len);
-    sprintf(return_label, "%s$ret.%0*d", function_name, CALL_COUNT_WIDTH,
+    sprintf(return_label, "%s$ret.%0*d", function_name, CALL_COUNT_LEN,
             call_count);
     return return_label;
 }
