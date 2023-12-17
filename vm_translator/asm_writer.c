@@ -45,7 +45,7 @@ typedef struct {
 } vm_command;
 
 static void write_vm_comment(const char *vm_line);
-static vm_command *get_command(const char *operator);
+static vm_command *get_vm_command(const char *operator);
 static void write_vm_comment(const char *vm_line);
 static void write_push(const cmd_args *args);
 static void write_push_segment(const char *segment, int value);
@@ -181,7 +181,7 @@ void write_asm_instructions(const char *vm_line) {
     char operator[MAX_OPERATOR_LEN];
     cmd_args args;
     sscanf(vm_line, "%s %s %u", operator, args.operand, &(args.value));
-    const vm_command *cmd = get_command(operator);
+    const vm_command *cmd = get_vm_command(operator);
     cmd->write_function(&args);
     fprintf(asm_file, "\n");
 }
