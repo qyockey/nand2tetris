@@ -333,8 +333,9 @@ static void generate_asm(const char *vm_file_path) {
     static char vm_line[MAX_VM_LINE];
     FILE *vm_file = safe_fopen(vm_file_path, "r");
     char *vm_file_name = get_file_name(vm_file_path);
+    set_current_vm_file_name(vm_file_name);
     while ((get_line(vm_line, MAX_VM_LINE, vm_file)) != NULL) {
-        write_asm_instructions(vm_line, vm_file_name);
+        write_asm_instructions(vm_line);
     }
     free(vm_file_name);
     safe_fclose(vm_file);

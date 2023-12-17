@@ -37,19 +37,12 @@
         "AM=M-1\n" \
         "D=M\n"
 
-enum commands { 
-    PUSH, POP, ADD, SUB, NEG, EQ, LT, GT, AND, OR, NOT, LABEL, GOTO, IF_GOTO,
-    CALL, FUNCTION, RETURN
-};
-
 typedef struct {
     char operand[MAX_STR_LEN];
     unsigned value;
-    char vm_file_name[MAX_STR_LEN];
 } cmd_args;
 
 typedef struct {
-    enum commands operator;
     char *name;
     void (*write_function)(const cmd_args *args);
 } vm_command;
@@ -79,26 +72,27 @@ static void write_comp(const char *comp, int count);
 static char *get_return_label(const char *function_name);
 
 static vm_command cmd_list[] = {
-    { PUSH,     "push",     write_push     },
-    { POP,      "pop",      write_pop      },
-    { ADD,      "add",      write_add      },
-    { SUB,      "sub",      write_sub      },
-    { NEG,      "neg",      write_neg      },
-    { EQ,       "eq",       write_eq       },
-    { LT,       "lt",       write_lt       },
-    { GT,       "gt",       write_gt       },
-    { AND,      "and",      write_and      },
-    { OR,       "or",       write_or       },
-    { NOT,      "not",      write_not      },
-    { LABEL,    "label",    write_label    },
-    { GOTO,     "goto",     write_goto     },
-    { IF_GOTO,  "if-goto",  write_if_goto  },
-    { CALL,     "call",     write_call     },
-    { FUNCTION, "function", write_function },
-    { RETURN,   "return",   write_return   }
+    { "push",     write_push     },
+    { "pop",      write_pop      },
+    { "add",      write_add      },
+    { "sub",      write_sub      },
+    { "neg",      write_neg      },
+    { "eq",       write_eq       },
+    { "lt",       write_lt       },
+    { "gt",       write_gt       },
+    { "and",      write_and      },
+    { "or",       write_or       },
+    { "not",      write_not      },
+    { "label",    write_label    },
+    { "goto",     write_goto     },
+    { "if-goto",  write_if_goto  },
+    { "call",     write_call     },
+    { "function", write_function },
+    { "return",   write_return   }
 };
 
 static FILE *asm_file;
+static char *current_vm_file_name;
 static hash_table *call_counts;
 
 void writer_init(const char *asm_file_path) {
@@ -108,6 +102,7 @@ void writer_init(const char *asm_file_path) {
 
 void writer_dispose() {
     safe_fclose(asm_file);
+    free(current_vm_file_name);
     hash_table_dispose(call_counts);
 }
 
@@ -120,7 +115,15 @@ void write_bootstrap() {
             "M=D\n"
             "\n"
     );
-    write_asm_instructions("call Sys.init 0", "Sys");
+    set_current_vm_file_name("Sys");
+    write_asm_instructions("call Sys.init 0");
+}
+
+void set_current_vm_file_name(const char *vm_file_name) {
+    if (current_vm_file_name) {
+        free(current_vm_file_name);
+    }
+    current_vm_file_name = safe_strdup(vm_file_name);
 }
 
 static void write_vm_comment(const char *vm_line) {
@@ -137,12 +140,11 @@ static vm_command *get_command(const char *operator) {
     exit(EXIT_FAILURE);
 }
 
-void write_asm_instructions(const char *vm_line, const char *vm_file_name) {
+void write_asm_instructions(const char *vm_line) {
     write_vm_comment(vm_line);
     char operator[MAX_STR_LEN];
     cmd_args args;
     sscanf(vm_line, "%s %s %u", operator, args.operand, &(args.value));
-    strncpy(args.vm_file_name, vm_file_name, MAX_STR_LEN);
     const vm_command *cmd = get_command(operator);
     cmd->write_function(&args);
     fprintf(asm_file, "\n");
@@ -173,7 +175,7 @@ static void write_push(const cmd_args *args) {
         fprintf(asm_file,
                 "@%s.%d\n"
                 PUSH_M,
-                args->vm_file_name, args->value
+                current_vm_file_name, args->value
         );
     } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
         // push RAM[*(5+i)]
@@ -228,7 +230,7 @@ static void write_pop(const cmd_args *args) {
                 POP_D
                 "@%s.%d\n"
                 "M=D\n",
-                args->vm_file_name, args->value
+                current_vm_file_name, args->value
         );
     } else if (strcmp(args->operand, "temp") == EXIT_SUCCESS) {
         // pop RAM[*(5+i)]
@@ -482,14 +484,14 @@ static void write_comp(const char *comp, int count) {
 }
 
 static char *get_return_label(const char *function_name) {
-    int call_count;
+    unsigned call_count;
     if (hash_table_contains(call_counts, function_name)) {
-        call_count = hash_table_get(call_counts, function_name);
-        call_count++;
-        hash_table_set(call_counts, function_name, call_count);
+        call_count = *((unsigned *) hash_table_get(call_counts, function_name));
+        ++call_count;
+        hash_table_set(call_counts, function_name, &call_count);
     } else {
         call_count = 0;
-        hash_table_add(call_counts, function_name, call_count);
+        hash_table_add(call_counts, function_name, &call_count);
     }
     size_t return_label_len = (strlen(function_name) + 5 /* strlen("$ret.") */
             + CALL_COUNT_WIDTH) * sizeof(char);
