@@ -107,7 +107,7 @@ bool hash_table_contains(const hash_table *table, const char *key) {
 ** Post-Conditions: A key_value_pair containing key and value was appended to
 **     the key-value pair linked list matching the hash value of key
 *******************************************************************************/
-void hash_table_add(const hash_table *table, const char *key, unsigned value) {
+void hash_table_add(const hash_table *table, const char *key, void *value) {
     assert_nonnull(table, "Error: Cannot add key-value pair to "
             "NULL hash table\n");
     assert_nonnull(key, "Error: Cannot add NULL key to key-value pair "
@@ -127,7 +127,7 @@ void hash_table_add(const hash_table *table, const char *key, unsigned value) {
 
 /*******************************************************************************
 ** Function: hash_table_get
-** Description: Returns value mapped to key, or -1 (UINT_MAX) if key not found
+** Description: Returns value mapped to key, or NULL if key not found
 ** Parameters:
 **     - table: hash_table to search for key in
 **     - key: key to search for
@@ -135,13 +135,13 @@ void hash_table_add(const hash_table *table, const char *key, unsigned value) {
 ** Post-Conditions: A key_value_pair containing key and value was appended to
 **     the key-value pair linked list matching the hash value of key
 *******************************************************************************/
-unsigned hash_table_get(const hash_table *table, const char *key) {
+void *hash_table_get(const hash_table *table, const char *key) {
     assert_nonnull(table, "Error: Cannot search NULL hash table\n");
     assert_nonnull(key, "Error: Cannot search for NULL key in hash table\n");
     const key_value_pair *pair = lookup(table, key);
     if (!pair) {
         // key not found
-        return -1;
+        return NULL;
     }
     return pair->value;
 }
@@ -158,7 +158,7 @@ unsigned hash_table_get(const hash_table *table, const char *key) {
 ** Post-Conditions: The key value pair whose key matches the provided key has 
 **     its value set to the provided value
 *******************************************************************************/
-bool hash_table_set(const hash_table *table, const char *key, unsigned value) {
+bool hash_table_set(const hash_table *table, const char *key, void *value) {
     key_value_pair *pair = lookup(table, key);
     if (!pair) {
         return false;
@@ -193,8 +193,8 @@ static const char *key_value_pair_to_string(const void *pair) {
         return NULL;
     }
     const char *key = ((const key_value_pair *) pair)->key;
-    unsigned value = ((const key_value_pair *) pair)->value;
-    sprintf(string, "{%s: %d}", key, value);
+    const void *value = ((const key_value_pair *) pair)->value;
+    sprintf(string, "{%s: %p}", key, value);
     return string;
 }
 
