@@ -220,6 +220,7 @@ static char *get_file_name(const char *file_path) {
             * sizeof(char);
     char *file_name = safe_malloc(name_size);
     strncpy(file_name, file_name_start, name_size);
+    file_name[name_size] = '\0';
     return file_name;
 }
 

@@ -10,8 +10,9 @@
 
 #define TEMP_START 5
 #define MAX_OPERATOR_LEN 9
-#define MAX_OPERAND_LEN 9
+#define MAX_OPERAND_LEN 50
 #define NUM_VM_OPERATORS 17
+#define VM_FILE_NAME_MAX_LEN 50
 #define CALL_COUNT_LEN 4
 #define CALL_COUNT_TABLE_SIZE 100
 
@@ -19,7 +20,7 @@
         "@SP\n" \
         "AM=M+1\n" \
         "A=A-1\n" \
-        "M=D\n" \
+        "M=D\n" 
 
 #define PUSH_A \
         "D=A\n" \
@@ -91,7 +92,7 @@ static vm_command cmd_list[] = {
 };
 
 static FILE *asm_file;
-static char *current_vm_file_name;
+static char current_vm_file_name[VM_FILE_NAME_MAX_LEN];
 static hash_table *call_counts;
 
 /*******************************************************************************
@@ -111,8 +112,8 @@ void writer_init(const char *asm_file_path) {
 
 /*******************************************************************************
 ** Function: writer_dispose
-** Description: Frees all memory allocated to writer: closes assembly file,
-**     frees name of current vm file, and disposes of call count hash table
+** Description: Frees all memory allocated to writer: closes assembly file
+**     and disposes of call count hash table
 ** Parameters: void
 ** Pre-Conditions: current_vm_file_name is allocated (set_current_vm_file_name
 **     has been called)
@@ -120,7 +121,6 @@ void writer_init(const char *asm_file_path) {
 *******************************************************************************/
 void writer_dispose() {
     safe_fclose(asm_file);
-    free(current_vm_file_name);
     hash_table_dispose(call_counts);
 }
 
@@ -150,21 +150,14 @@ void write_bootstrap() {
 
 /*******************************************************************************
 ** Function: set_current_vm_file_name
-** Description: Frees current_vm_file_name if it has been previously set, then 
-**     sets it to provided name
+** Description: Sets current_vm_file_name to provided name
 ** Parameters:
 **     - vm_file_name: name of vm file currently being compiled
 ** Pre-Conditions: vm_file_name is non-null
-** Post-Conditions: current_vm_file_name is allocated memory and contains
-**     provided name
+** Post-Conditions: N/A
 *******************************************************************************/
 void set_current_vm_file_name(const char *vm_file_name) {
-    assert_nonnull(vm_file_name, "Error: Cannot set current vm file name to "
-            "NULL\n");
-    if (current_vm_file_name) {
-        free(current_vm_file_name);
-    }
-    current_vm_file_name = safe_strdup(vm_file_name);
+    strcpy(current_vm_file_name, vm_file_name);
 }
 
 /*******************************************************************************
