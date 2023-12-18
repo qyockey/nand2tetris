@@ -722,12 +722,12 @@ static void write_comparison(const char *jump_code, int count) {
 static char *get_return_label(const char *function_name) {
     unsigned call_count;
     if (hash_table_contains(call_counts, function_name)) {
-        call_count = *((unsigned *) hash_table_get(call_counts, function_name));
+        call_count = hash_table_get(call_counts, function_name);
         ++call_count;
-        hash_table_set(call_counts, function_name, &call_count);
+        hash_table_set(call_counts, function_name, call_count);
     } else {
         call_count = 0;
-        hash_table_add(call_counts, function_name, &call_count);
+        hash_table_add(call_counts, function_name, call_count);
     }
     size_t return_label_len = (strlen(function_name) + 5 /* strlen("$ret.") */
             + CALL_COUNT_LEN) * sizeof(char);

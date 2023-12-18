@@ -15,6 +15,7 @@
 
 #define HASH_MULTIPLIER_1 31
 #define HASH_MULTIPLIER_2 17
+#define KEY_VALUE_PAIR_MAX_STR_LEN 128
 
 static unsigned hash(const char *key, unsigned table_size);
 static key_value_pair *lookup(const hash_table *table, const char *key);
@@ -107,7 +108,7 @@ bool hash_table_contains(const hash_table *table, const char *key) {
 ** Post-Conditions: A key_value_pair containing key and value was appended to
 **     the key-value pair linked list matching the hash value of key
 *******************************************************************************/
-void hash_table_add(const hash_table *table, const char *key, void *value) {
+void hash_table_add(const hash_table *table, const char *key, unsigned value) {
     assert_nonnull(table, "Error: Cannot add key-value pair to "
             "NULL hash table\n");
     assert_nonnull(key, "Error: Cannot add NULL key to key-value pair "
@@ -127,7 +128,7 @@ void hash_table_add(const hash_table *table, const char *key, void *value) {
 
 /*******************************************************************************
 ** Function: hash_table_get
-** Description: Returns value mapped to key, or NULL if key not found
+** Description: Returns value mapped to key, or -1 (UINT_MAX) if key not found
 ** Parameters:
 **     - table: hash_table to search for key in
 **     - key: key to search for
@@ -135,13 +136,13 @@ void hash_table_add(const hash_table *table, const char *key, void *value) {
 ** Post-Conditions: A key_value_pair containing key and value was appended to
 **     the key-value pair linked list matching the hash value of key
 *******************************************************************************/
-void *hash_table_get(const hash_table *table, const char *key) {
+unsigned hash_table_get(const hash_table *table, const char *key) {
     assert_nonnull(table, "Error: Cannot search NULL hash table\n");
     assert_nonnull(key, "Error: Cannot search for NULL key in hash table\n");
     const key_value_pair *pair = lookup(table, key);
     if (!pair) {
         // key not found
-        return NULL;
+        return -1;
     }
     return pair->value;
 }
@@ -158,7 +159,7 @@ void *hash_table_get(const hash_table *table, const char *key) {
 ** Post-Conditions: The key value pair whose key matches the provided key has 
 **     its value set to the provided value
 *******************************************************************************/
-bool hash_table_set(const hash_table *table, const char *key, void *value) {
+bool hash_table_set(const hash_table *table, const char *key, unsigned value) {
     key_value_pair *pair = lookup(table, key);
     if (!pair) {
         return false;
@@ -188,13 +189,14 @@ void hash_table_print(const hash_table *table) {
 }
 
 static const char *key_value_pair_to_string(const void *pair) {
-    static char string[128];
+    static char string[KEY_VALUE_PAIR_MAX_STR_LEN];
     if (!pair) {
         return NULL;
     }
-    const char *key = ((const key_value_pair *) pair)->key;
-    const void *value = ((const key_value_pair *) pair)->value;
-    sprintf(string, "{%s: %p}", key, value);
+    const key_value_pair *kv_pair = (const key_value_pair *) pair;
+    const char *key = kv_pair->key;
+    unsigned value = kv_pair->value;
+    sprintf(string, "{%s: %d}", key, value);
     return string;
 }
 
