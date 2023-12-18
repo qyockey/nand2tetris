@@ -188,20 +188,46 @@ void hash_table_print(const hash_table *table) {
     }
 }
 
+/*******************************************************************************
+** Function: key_value_pair_to_string
+** Description: Generates a string representation of a key_value_pair
+** Parameters:
+**     - pair: key_value_pair to create string of
+** Pre-Conditions: If non-null, key and value can fit into
+**     KEY_VALUE_PAIR_MAX_STRING_LEN - 5 characters or less
+** Post-Conditions: Return value is non-null
+*******************************************************************************/
 static const char *key_value_pair_to_string(const void *pair) {
     static char string[KEY_VALUE_PAIR_MAX_STR_LEN];
     if (!pair) {
-        return NULL;
+        sprintf(string, "{NULL}");
+        return string;
     }
-    const key_value_pair *kv_pair = (const key_value_pair *) pair;
+    const key_value_pair *kv_pair = pair;
     const char *key = kv_pair->key;
     unsigned value = kv_pair->value;
     sprintf(string, "{%s: %d}", key, value);
     return string;
 }
 
-static bool key_value_pair_has_key(const void *pair, const void *key) {
-    return strcmp(((const key_value_pair *) pair)->key, key) == EXIT_SUCCESS;
+
+/*******************************************************************************
+** Function: key_value_pair_has_key
+** Description: Checks whether the key in a key_value_pair matches a
+**     given string
+** Parameters:
+**     - pair: key_value_pair to check key of
+**     - compare: String to check if equal to key
+** Pre-Conditions: pair and compare are both non-null
+** Post-Conditions: N/A
+*******************************************************************************/
+static bool key_value_pair_has_key(const void *pair, const void *compare) {
+    assert_nonnull(pair, "Error: Cannot compare key of NULL key_value_pair\n");
+    assert_nonnull(compare, "Error: Cannot compare key of key_value_pair"
+            "to NULL string\n");
+    const key_value_pair *kv_pair = pair;
+    const char *key = kv_pair->key;
+    return strcmp(key, compare) == EXIT_SUCCESS;
 }
 
 /*******************************************************************************
