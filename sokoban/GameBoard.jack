@@ -1,14 +1,20 @@
 class GameBoard {
     field Array board;
     field Array savedState;
+    field int numBoxes;
+    field int numRows;
+    field int numCols;
+    field int correctlyPlacedBoxes;
     field int playerStartRow;
     field int playerStartCol;
     field int size;
-    field int rowLen;
 
-    constructor GameBoard new(int numRows, int numCols) {
-        let rowLen = numCols;
-        let size = numRows * numCols;
+    constructor GameBoard new(int rows, int cols, int boxes) {
+        let numCols = cols;
+        let numRows = rows;
+        let size = rows * cols;
+        let numBoxes = boxes;
+        let correctlyPlacedBoxes = 0;
         let board = Array.new(size);
         let savedState = Array.new(size);
         return this;
@@ -22,12 +28,20 @@ class GameBoard {
     }
 
     method int get(int row, int col) {
-        return board[row * rowLen + col];
+        return board[row * numCols + col];
     }
 
     method void set(int row, int col, int data) {
-        let board[row * rowLen + col] = data;
+        let board[row * numCols + col] = data;
         return;
+    }
+
+    method int getNumRows() {
+        return numRows;
+    }
+
+    method int getNumCols() {
+        return numCols;
     }
 
     method void saveState() {
@@ -62,6 +76,20 @@ class GameBoard {
 
     method int getPlayerStartCol() {
         return playerStartCol;
+    }
+
+    method void pushBoxOntoTarget() {
+        let correctlyPlacedBoxes = correctlyPlacedBoxes + 1;
+        return;
+    }
+
+    method void pushBoxOffTarget() {
+        let correctlyPlacedBoxes = correctlyPlacedBoxes - 1;
+        return;
+    }
+
+    method boolean levelComplete() {
+        return correctlyPlacedBoxes = numBoxes;
     }
 }
 
