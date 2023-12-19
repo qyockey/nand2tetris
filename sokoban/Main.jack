@@ -1,0 +1,10 @@
+class Main {
+    function void main() {
+        var Sokoban game;
+        let game = Sokoban.new();
+        do game.run();
+        do game.dispose();
+        return;
+    }
+}
+

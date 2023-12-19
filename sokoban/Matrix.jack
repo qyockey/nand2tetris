@@ -1,0 +1,26 @@
+class Matrix {
+    field Array matrix;
+    field int rowLen;
+
+    constructor Matrix new(int numRows, int numCols) {
+        let rowLen = numCols;
+        let matrix = Array.new(numRows * numCols);
+        return this;
+    }
+
+    method void dispose() {
+        do matrix.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method int get(int row, int col) {
+        return matrix[row * rowLen + col];
+    }
+
+    method void set(int row, int col, int data) {
+        let matrix[row * rowLen + col] = data;
+        return;
+    }
+}
+
