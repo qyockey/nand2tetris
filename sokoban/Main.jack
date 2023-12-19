@@ -1,6 +1,5 @@
 class Main {
     function void main() {
-        var Levels levels;
         do Levels.init();
         do Levels.level1();
         do Levels.dispose();
