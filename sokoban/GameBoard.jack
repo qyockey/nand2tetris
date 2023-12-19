@@ -1,0 +1,67 @@
+class GameBoard {
+    field Array board;
+    field Array savedState;
+    field int playerStartRow;
+    field int playerStartCol;
+    field int size;
+    field int rowLen;
+
+    constructor GameBoard new(int numRows, int numCols) {
+        let rowLen = numCols;
+        let size = numRows * numCols;
+        let board = Array.new(size);
+        let savedState = Array.new(size);
+        return this;
+    }
+
+    method void dispose() {
+        do board.dispose();
+        do savedState.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method int get(int row, int col) {
+        return board[row * rowLen + col];
+    }
+
+    method void set(int row, int col, int data) {
+        let board[row * rowLen + col] = data;
+        return;
+    }
+
+    method void saveState() {
+        var int cell;
+        let cell = 0;
+        while (cell < size) {
+            let savedState[cell] = board[cell];
+            let cell = cell + 1;
+        }
+        return;
+    }
+
+    method void loadState() {
+        var int cell;
+        let cell = 0;
+        while (cell < size) {
+            let board[cell] = savedState[cell];
+            let cell = cell + 1;
+        }
+        return;
+    }
+
+    method void setPlayerStartPos(int row, int col) {
+        let playerStartRow = row;
+        let playerStartCol = col;
+        return;
+    }
+
+    method int getPlayerStartRow() {
+        return playerStartRow;
+    }
+
+    method int getPlayerStartCol() {
+        return playerStartCol;
+    }
+}
+

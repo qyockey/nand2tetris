@@ -14,7 +14,7 @@
 
 class Sokoban {
     field int level;
-    field Matrix board;
+    field GameBoard board;
     field int playerCol;
     field int playerRow;
 
@@ -22,7 +22,7 @@ class Sokoban {
         var int row;
 
         let level = 1;
-        let board = Matrix.new(14, 14);
+        let board = GameBoard.new(14, 14);
         do loadLevel1();
         do drawBoard();
         do Sokoban.drawPlayer(playerRow, playerCol);
@@ -56,12 +56,16 @@ class Sokoban {
                     let newRow = playerRow + key - 132;
                     let newCol = playerCol;
                 }
-                do move(playerRow, playerCol, newRow,
-                        newCol);
-            }
-            if (key = 81) { // Q
+                do move(playerRow, playerCol, newRow, newCol);
+            } else { if (key = 81) { // Q
                 let running = false;
-            }
+            } else { if (key = 82) { // R
+                let playerRow = board.getPlayerStartRow();
+                let playerCol = board.getPlayerStartCol();
+                do board.loadState();
+                do drawBoard();
+                do Sokoban.drawPlayer(playerRow, playerCol);
+            }}}
         }
         return;
     }
@@ -133,8 +137,10 @@ class Sokoban {
         do board.set(5, 5, 4);
         do board.set(2, 3, 2);
         do board.set(4, 2, 1);
-        let playerCol = 4;
-        let playerRow = 1;
+        do board.setPlayerStartPos(1,4);
+        do board.saveState();
+        let playerRow = board.getPlayerStartRow();
+        let playerCol = board.getPlayerStartCol();
         return;
     }
 
@@ -145,12 +151,11 @@ class Sokoban {
             let col = 0;
             while (col < 14) {
                 let cell = board.get(row, col);
-                if (cell > 0) {
-                    if (cell = 1) { do Sokoban.drawTarget(row, col); }
-                    else { if (cell = 2) { do Sokoban.drawBox(row, col); }
-                    else { if (cell = 3) { do Sokoban.drawBoxOnTarget(row, col); }
-                    else { if (cell = 4) { do Sokoban.drawWall(row, col); }}}}
-                }
+                if (cell = 0) { do Sokoban.erase(row, col); }
+                else { if (cell = 1) { do Sokoban.drawTarget(row, col); }
+                else { if (cell = 2) { do Sokoban.drawBox(row, col); }
+                else { if (cell = 3) { do Sokoban.drawBoxOnTarget(row, col); }
+                else { if (cell = 4) { do Sokoban.drawWall(row, col); }}}}}
                 let col = col + 1;
             }
             let row = row + 1;
