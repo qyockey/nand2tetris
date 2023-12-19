@@ -18,14 +18,7 @@ class Sokoban {
     field int playerCol;
     field int playerRow;
 
-    constructor Sokoban new() {
-        var int row;
-
-        let level = 1;
-        let board = GameBoard.new(14, 14);
-        do loadLevel1();
-        do drawBoard();
-        do Sokoban.drawPlayer(playerRow, playerCol);
+    constructor Sokoban init() {
         return this;
     }
     
@@ -36,13 +29,25 @@ class Sokoban {
         return;
     }
 
+    method void playLevel(int levelNum, GameBoard levelBoard) {
+        let level = levelNum;
+        let board = levelBoard;
+        let playerRow = levelBoard.getPlayerStartRow();
+        let playerCol = levelBoard.getPlayerStartCol();
+        do board.saveState();
+        do Sokoban.drawBoard(board);
+        do Sokoban.drawPlayer(playerRow, playerCol);
+        do run();
+        do board.dispose();
+        do Sys.wait(1000);
+        return;
+    }
+
     method void run() {
         var int key;
-        var boolean running;
         var int newRow;
         var int newCol;
-        let running = true;
-        while (running) {
+        while (~board.levelComplete()) {
             let key = 0;
             while (key = 0) {
                 let key = Keyboard.keyPressed();
@@ -58,12 +63,12 @@ class Sokoban {
                 }
                 do move(playerRow, playerCol, newRow, newCol);
             } else { if (key = 81) { // Q
-                let running = false;
+                do Sys.halt();
             } else { if (key = 82) { // R
                 let playerRow = board.getPlayerStartRow();
                 let playerCol = board.getPlayerStartCol();
                 do board.loadState();
-                do drawBoard();
+                do Sokoban.drawBoard(board);
                 do Sokoban.drawPlayer(playerRow, playerCol);
             }}}
         }
@@ -92,8 +97,19 @@ class Sokoban {
                 do board.set(newRow, newCol, targetCellContents - 2);
                 if (boxPushCellContents = 1) { // pushing onto target
                     do Sokoban.drawBoxOnTarget(boxPushCellRow, boxPushCellCol);
-                } else { // pushing off of target
+                    do board.pushBoxOntoTarget();
+                    if (board.levelComplete()) {
+                        do Output.moveCursor(11, 24);
+                        do Output.printString("Level ");
+                        do Output.printInt(level);
+                        do Output.printString(" Complete!");
+                        let level = level + 1;
+                    }
+                } else { // pushing to non-target cell
                     do Sokoban.drawBox(boxPushCellRow, boxPushCellCol);
+                    if (targetCellContents = 1) { // pushing off of target
+                        do board.pushBoxOffTarget();
+                    }
                 }
                 do board.set(boxPushCellRow, boxPushCellCol,
                         boxPushCellContents + 2);
@@ -114,42 +130,14 @@ class Sokoban {
         return;
     }
 
-    method void loadLevel1() {
-        do board.set(0, 0, 4);
-        do board.set(0, 1, 4);
-        do board.set(0, 2, 4);
-        do board.set(0, 3, 4);
-        do board.set(0, 4, 4);
-        do board.set(0, 5, 4);
-        do board.set(1, 0, 4);
-        do board.set(2, 0, 4);
-        do board.set(3, 0, 4);
-        do board.set(4, 0, 4);
-        do board.set(1, 5, 4);
-        do board.set(2, 5, 4);
-        do board.set(3, 5, 4);
-        do board.set(4, 5, 4);
-        do board.set(5, 0, 4);
-        do board.set(5, 1, 4);
-        do board.set(5, 2, 4);
-        do board.set(5, 3, 4);
-        do board.set(5, 4, 4);
-        do board.set(5, 5, 4);
-        do board.set(2, 3, 2);
-        do board.set(4, 2, 1);
-        do board.setPlayerStartPos(1,4);
-        do board.saveState();
-        let playerRow = board.getPlayerStartRow();
-        let playerCol = board.getPlayerStartCol();
-        return;
-    }
-
-    method void drawBoard() {
-        var int row, col, cell;
+    function void drawBoard(GameBoard board) {
+        var int row, col, cell, numRows, numCols;
+        let numRows = board.getNumRows();
+        let numCols = board.getNumCols();
         let row = 0;
-        while (row < 14) {
+        while (row < numRows) {
             let col = 0;
-            while (col < 14) {
+            while (col < numCols) {
                 let cell = board.get(row, col);
                 if (cell = 0) { do Sokoban.erase(row, col); }
                 else { if (cell = 1) { do Sokoban.drawTarget(row, col); }

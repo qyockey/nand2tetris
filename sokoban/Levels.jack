@@ -1,0 +1,46 @@
+class Levels {
+    field GameBoard board;
+    field Sokoban game;
+
+    constructor Levels init() {
+        let game = Sokoban.init();
+        return this;
+    }
+
+    method void dispose() {
+        do game.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void level1() {
+        let board = GameBoard.new(6, 6, 1);
+        do board.set(0, 0, 4);
+        do board.set(0, 1, 4);
+        do board.set(0, 2, 4);
+        do board.set(0, 3, 4);
+        do board.set(0, 4, 4);
+        do board.set(0, 5, 4);
+        do board.set(1, 0, 4);
+        do board.set(2, 0, 4);
+        do board.set(3, 0, 4);
+        do board.set(4, 0, 4);
+        do board.set(1, 5, 4);
+        do board.set(2, 5, 4);
+        do board.set(3, 5, 4);
+        do board.set(4, 5, 4);
+        do board.set(5, 0, 4);
+        do board.set(5, 1, 4);
+        do board.set(5, 2, 4);
+        do board.set(5, 3, 4);
+        do board.set(5, 4, 4);
+        do board.set(5, 5, 4);
+        do board.set(2, 3, 2);
+        do board.set(4, 2, 1);
+        do board.setPlayerStartPos(1,4);
+        do game.playLevel(1, board);
+        do board.dispose();
+        return;
+    }
+}
+

@@ -1,9 +1,9 @@
 class Main {
     function void main() {
-        var Sokoban game;
-        let game = Sokoban.new();
-        do game.run();
-        do game.dispose();
+        var Levels levels;
+        let levels = Levels.init();
+        do levels.level1();
+        do levels.dispose();
         return;
     }
 }
