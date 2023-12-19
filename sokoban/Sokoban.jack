@@ -17,6 +17,7 @@ class Sokoban {
     field GameBoard board;
     field int playerCol;
     field int playerRow;
+    static int drawAddressStart;
 
     constructor Sokoban init() {
         return this;
@@ -34,6 +35,8 @@ class Sokoban {
         let board = levelBoard;
         let playerRow = levelBoard.getPlayerStartRow();
         let playerCol = levelBoard.getPlayerStartCol();
+        let drawAddressStart = 16384 + (512 * board.getTopRow())
+                + board.getLeftCol();
         do board.saveState();
         do Sokoban.drawBoard(board);
         do Sokoban.drawPlayer(playerRow, playerCol);
@@ -153,7 +156,7 @@ class Sokoban {
 
     function void drawBox(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, -1);
         do Memory.poke(memAddress+32, -16381);
         do Memory.poke(memAddress+64, -24571);
@@ -175,7 +178,7 @@ class Sokoban {
 
     function void drawTarget(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, 0);
         do Memory.poke(memAddress+32, 0);
         do Memory.poke(memAddress+64, 14364);
@@ -197,7 +200,7 @@ class Sokoban {
 
     function void drawBoxOnTarget(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, -1);
         do Memory.poke(memAddress+32, -16381);
         do Memory.poke(memAddress+64, -24571);
@@ -219,7 +222,7 @@ class Sokoban {
 
     function void drawWall(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, 32508);
         do Memory.poke(memAddress+32, 1025);
         do Memory.poke(memAddress+64, -31743);
@@ -241,7 +244,7 @@ class Sokoban {
 
     function void drawPlayer(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, 0);
         do Memory.poke(memAddress+32, 992);
         do Memory.poke(memAddress+64, 2032);
@@ -263,7 +266,7 @@ class Sokoban {
 
     function void erase(int row, int col) {
         var int memAddress;
-        let memAddress = 16384 + (512 * row) + col;
+        let memAddress = drawAddressStart + (512 * row) + col;
         do Memory.poke(memAddress+0, 0);
         do Memory.poke(memAddress+32, 0);
         do Memory.poke(memAddress+64, 0);

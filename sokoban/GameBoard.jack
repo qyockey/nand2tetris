@@ -4,6 +4,8 @@ class GameBoard {
     field int numBoxes;
     field int numRows;
     field int numCols;
+    field int topRow;
+    field int leftCol;
     field int correctlyPlacedBoxes;
     field int playerStartRow;
     field int playerStartCol;
@@ -12,9 +14,11 @@ class GameBoard {
     constructor GameBoard new(int rows, int cols, int boxes) {
         let numCols = cols;
         let numRows = rows;
-        let size = rows * cols;
         let numBoxes = boxes;
         let correctlyPlacedBoxes = 0;
+        let size = rows * cols;
+        let topRow = 8 - (rows / 2);
+        let leftCol = 16 - (cols / 2);
         let board = Array.new(size);
         let savedState = Array.new(size);
         return this;
@@ -76,6 +80,14 @@ class GameBoard {
 
     method int getPlayerStartCol() {
         return playerStartCol;
+    }
+
+    method int getTopRow() {
+        return topRow;
+    }
+
+    method int getLeftCol() {
+        return leftCol;
     }
 
     method void pushBoxOntoTarget() {
