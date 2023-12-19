@@ -1,19 +1,18 @@
 class Levels {
-    field GameBoard board;
-    field Sokoban game;
+    static GameBoard board;
+    static Sokoban game;
 
-    constructor Levels init() {
+    function void init() {
         let game = Sokoban.init();
-        return this;
-    }
-
-    method void dispose() {
-        do game.dispose();
-        do Memory.deAlloc(this);
         return;
     }
 
-    method void level1() {
+    function void dispose() {
+        do game.dispose();
+        return;
+    }
+
+    function void level1() {
         let board = GameBoard.new(6, 6, 1);
         do board.set(0, 0, 4);
         do board.set(0, 1, 4);

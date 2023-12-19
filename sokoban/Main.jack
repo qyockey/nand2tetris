@@ -1,9 +1,9 @@
 class Main {
     function void main() {
         var Levels levels;
-        let levels = Levels.init();
-        do levels.level1();
-        do levels.dispose();
+        do Levels.init();
+        do Levels.level1();
+        do Levels.dispose();
         return;
     }
 }
