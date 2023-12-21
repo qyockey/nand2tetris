@@ -17,16 +17,33 @@ class Sokoban {
     field GameBoard board;
     field int playerCol;
     field int playerRow;
-    static int drawAddressStart;
 
     constructor Sokoban init() {
         return this;
     }
     
     method void dispose() {
-        var int row;
-        do board.dispose();
         do Memory.deAlloc(this);
+        return;
+    }
+
+    method void titleScreen() {
+        do Screen.clearScreen();
+        do Output.moveCursor(8, 28);
+        do Output.printString("SOKOBAN");
+        do Output.moveCursor(12, 26);
+        do Output.printString("R to restart");
+        do Output.moveCursor(13, 27);
+        do Output.printString("Q to quit");
+        do Output.moveCursor(16, 18);
+        do Output.printString("press any key to continue...");
+        do Output.moveCursor(20, 26);
+        do Output.printString("Quinn Yockey");
+        do Output.moveCursor(21, 25);
+        do Output.printString("December 2023");
+        while (~Keyboard.keyPressed()) {}
+        do Memory.poke(24576, 0);
+        do Screen.clearScreen();
         return;
     }
 
@@ -35,14 +52,12 @@ class Sokoban {
         let board = levelBoard;
         let playerRow = levelBoard.getPlayerStartRow();
         let playerCol = levelBoard.getPlayerStartCol();
-        let drawAddressStart = 16384 + (512 * board.getTopRow())
-                + board.getLeftCol();
         do board.saveState();
-        do Sokoban.drawBoard(board);
-        do Sokoban.drawPlayer(playerRow, playerCol);
+        do Graphics.drawBoard(board);
+        do Graphics.drawPlayer(playerRow, playerCol);
         do run();
-        do board.dispose();
         do Sys.wait(1000);
+        do Screen.clearScreen();
         return;
     }
 
@@ -71,46 +86,49 @@ class Sokoban {
                 let playerRow = board.getPlayerStartRow();
                 let playerCol = board.getPlayerStartCol();
                 do board.loadState();
-                do Sokoban.drawBoard(board);
-                do Sokoban.drawPlayer(playerRow, playerCol);
+                do Screen.clearScreen();
+                do Graphics.drawBoard(board);
+                do Graphics.drawPlayer(playerRow, playerCol);
             }}}
         }
         return;
     }
 
     method void move(int oldRow, int oldCol, int newRow, int newCol) {
-        var int targetCellContents;
+        var int newCellContents;
         var int oldCellContents;
         var int boxPushCellContents;
         var int boxPushCellRow;
         var int boxPushCellCol;
         var boolean canMove;
         let oldCellContents = board.get(oldRow, oldCol);
-        let targetCellContents = board.get(newRow, newCol);
-        if (targetCellContents < 2) { // empty or target
+        let newCellContents = board.get(newRow, newCol);
+        if (newCellContents < 2) { // empty or target
             let canMove = true;
-        } else { if (targetCellContents < 4) { // box or box on target
+        } else { if (newCellContents < 4) { // box or box on target
             let boxPushCellRow = newRow + newRow - oldRow;
             let boxPushCellCol = newCol + newCol - oldCol;
             let boxPushCellContents = board.get(boxPushCellRow,
                     boxPushCellCol);
             let canMove = boxPushCellContents < 2;
             if (canMove) {
-                do Sokoban.drawBox(boxPushCellRow, boxPushCellCol);
-                do board.set(newRow, newCol, targetCellContents - 2);
+                do Graphics.drawBox(boxPushCellRow, boxPushCellCol);
+                do board.set(newRow, newCol, newCellContents - 2);
                 if (boxPushCellContents = 1) { // pushing onto target
-                    do Sokoban.drawBoxOnTarget(boxPushCellRow, boxPushCellCol);
-                    do board.pushBoxOntoTarget();
+                    do Graphics.drawBoxOnTarget(boxPushCellRow, boxPushCellCol);
+                    if (newCellContents = 2) { // pushing from empty space
+                        do board.pushBoxOntoTarget();
+                    }
                     if (board.levelComplete()) {
-                        do Output.moveCursor(11, 24);
+                        do Output.moveCursor(3, 24);
                         do Output.printString("Level ");
                         do Output.printInt(level);
                         do Output.printString(" Complete!");
                         let level = level + 1;
                     }
                 } else { // pushing to non-target cell
-                    do Sokoban.drawBox(boxPushCellRow, boxPushCellCol);
-                    if (targetCellContents = 1) { // pushing off of target
+                    do Graphics.drawBox(boxPushCellRow, boxPushCellCol);
+                    if (newCellContents = 3) { // pushing off of target
                         do board.pushBoxOffTarget();
                     }
                 }
@@ -124,165 +142,12 @@ class Sokoban {
             let playerRow = newRow;
             let playerCol = newCol;
             if (oldCellContents = 1) {
-                do Sokoban.drawTarget(oldRow, oldCol);
+                do Graphics.drawTarget(oldRow, oldCol);
             } else {
-                do Sokoban.erase(oldRow, oldCol);
+                do Graphics.erase(oldRow, oldCol);
             }
-            do Sokoban.drawPlayer(playerRow, playerCol);
+            do Graphics.drawPlayer(playerRow, playerCol);
         }
-        return;
-    }
-
-    function void drawBoard(GameBoard board) {
-        var int row, col, cell, numRows, numCols;
-        let numRows = board.getNumRows();
-        let numCols = board.getNumCols();
-        let row = 0;
-        while (row < numRows) {
-            let col = 0;
-            while (col < numCols) {
-                let cell = board.get(row, col);
-                if (cell = 0) { do Sokoban.erase(row, col); }
-                else { if (cell = 1) { do Sokoban.drawTarget(row, col); }
-                else { if (cell = 2) { do Sokoban.drawBox(row, col); }
-                else { if (cell = 3) { do Sokoban.drawBoxOnTarget(row, col); }
-                else { if (cell = 4) { do Sokoban.drawWall(row, col); }}}}}
-                let col = col + 1;
-            }
-            let row = row + 1;
-        }
-        return;
-    }
-
-    function void drawBox(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, -1);
-        do Memory.poke(memAddress+32, -16381);
-        do Memory.poke(memAddress+64, -24571);
-        do Memory.poke(memAddress+96, -24583);
-        do Memory.poke(memAddress+128, -28087);
-        do Memory.poke(memAddress+160, -28087);
-        do Memory.poke(memAddress+192, -28087);
-        do Memory.poke(memAddress+224, -28087);
-        do Memory.poke(memAddress+256, -28087);
-        do Memory.poke(memAddress+288, -28087);
-        do Memory.poke(memAddress+320, -28087);
-        do Memory.poke(memAddress+352, -28087);
-        do Memory.poke(memAddress+384, -24583);
-        do Memory.poke(memAddress+416, -24571);
-        do Memory.poke(memAddress+448, -16381);
-        do Memory.poke(memAddress+480, -1);
-        return;
-    }
-
-    function void drawTarget(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, 0);
-        do Memory.poke(memAddress+32, 0);
-        do Memory.poke(memAddress+64, 14364);
-        do Memory.poke(memAddress+96, 8196);
-        do Memory.poke(memAddress+128, 8196);
-        do Memory.poke(memAddress+160, 0);
-        do Memory.poke(memAddress+192, 0);
-        do Memory.poke(memAddress+224, 384);
-        do Memory.poke(memAddress+256, 384);
-        do Memory.poke(memAddress+288, 0);
-        do Memory.poke(memAddress+320, 0);
-        do Memory.poke(memAddress+352, 8196);
-        do Memory.poke(memAddress+384, 8196);
-        do Memory.poke(memAddress+416, 14364);
-        do Memory.poke(memAddress+448, 0);
-        do Memory.poke(memAddress+480, 0);
-        return;
-    }
-
-    function void drawBoxOnTarget(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, -1);
-        do Memory.poke(memAddress+32, -16381);
-        do Memory.poke(memAddress+64, -24571);
-        do Memory.poke(memAddress+96, -24583);
-        do Memory.poke(memAddress+128, -28663);
-        do Memory.poke(memAddress+160, -27639);
-        do Memory.poke(memAddress+192, -28151);
-        do Memory.poke(memAddress+224, -28119);
-        do Memory.poke(memAddress+256, -28343);
-        do Memory.poke(memAddress+288, -28215);
-        do Memory.poke(memAddress+320, -28535);
-        do Memory.poke(memAddress+352, -28663);
-        do Memory.poke(memAddress+384, -24583);
-        do Memory.poke(memAddress+416, -24571);
-        do Memory.poke(memAddress+448, -16381);
-        do Memory.poke(memAddress+480, -1);
-        return;
-    }
-
-    function void drawWall(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, 32508);
-        do Memory.poke(memAddress+32, 1025);
-        do Memory.poke(memAddress+64, -31743);
-        do Memory.poke(memAddress+96, -31743);
-        do Memory.poke(memAddress+128, -27647);
-        do Memory.poke(memAddress+160, 29696);
-        do Memory.poke(memAddress+192, -31743);
-        do Memory.poke(memAddress+224, -31743);
-        do Memory.poke(memAddress+256, -31743);
-        do Memory.poke(memAddress+288, -31743);
-        do Memory.poke(memAddress+320, -32249);
-        do Memory.poke(memAddress+352, -32231);
-        do Memory.poke(memAddress+384, -32287);
-        do Memory.poke(memAddress+416, -32511);
-        do Memory.poke(memAddress+448, -16127);
-        do Memory.poke(memAddress+480, 32510);
-        return;
-    }
-
-    function void drawPlayer(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, 0);
-        do Memory.poke(memAddress+32, 992);
-        do Memory.poke(memAddress+64, 2032);
-        do Memory.poke(memAddress+96, 4088);
-        do Memory.poke(memAddress+128, 1040);
-        do Memory.poke(memAddress+160, 1360);
-        do Memory.poke(memAddress+192, 1040);
-        do Memory.poke(memAddress+224, 992);
-        do Memory.poke(memAddress+256, 3096);
-        do Memory.poke(memAddress+288, 4100);
-        do Memory.poke(memAddress+320, 9234);
-        do Memory.poke(memAddress+352, 7196);
-        do Memory.poke(memAddress+384, 1168);
-        do Memory.poke(memAddress+416, 2184);
-        do Memory.poke(memAddress+448, 2032);
-        do Memory.poke(memAddress+480, 0);
-        return;
-    }
-
-    function void erase(int row, int col) {
-        var int memAddress;
-        let memAddress = drawAddressStart + (512 * row) + col;
-        do Memory.poke(memAddress+0, 0);
-        do Memory.poke(memAddress+32, 0);
-        do Memory.poke(memAddress+64, 0);
-        do Memory.poke(memAddress+96, 0);
-        do Memory.poke(memAddress+128, 0);
-        do Memory.poke(memAddress+160, 0);
-        do Memory.poke(memAddress+192, 0);
-        do Memory.poke(memAddress+224, 0);
-        do Memory.poke(memAddress+256, 0);
-        do Memory.poke(memAddress+288, 0);
-        do Memory.poke(memAddress+320, 0);
-        do Memory.poke(memAddress+352, 0);
-        do Memory.poke(memAddress+384, 0);
-        do Memory.poke(memAddress+416, 0);
-        do Memory.poke(memAddress+448, 0);
-        do Memory.poke(memAddress+480, 0);
         return;
     }
 
