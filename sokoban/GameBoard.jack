@@ -7,20 +7,29 @@ class GameBoard {
     field int topRow;
     field int leftCol;
     field int correctlyPlacedBoxes;
+    field int initialCorrectBoxes;
     field int playerStartRow;
     field int playerStartCol;
     field int size;
 
-    constructor GameBoard new(int rows, int cols, int boxes) {
+    constructor GameBoard new(int rows, int cols, int correctBoxes,
+            int totalBoxes) {
+        var int cell;
+        let cell = 0;
         let numCols = cols;
         let numRows = rows;
-        let numBoxes = boxes;
-        let correctlyPlacedBoxes = 0;
+        let numBoxes = totalBoxes;
+        let correctlyPlacedBoxes = correctBoxes;
+        let initialCorrectBoxes = correctBoxes;
         let size = rows * cols;
         let topRow = 8 - (rows / 2);
         let leftCol = 16 - (cols / 2);
         let board = Array.new(size);
         let savedState = Array.new(size);
+        while (cell < size) {
+            let board[cell] = 0;
+            let cell = cell + 1;
+        }
         return this;
     }
 
@@ -65,6 +74,7 @@ class GameBoard {
             let board[cell] = savedState[cell];
             let cell = cell + 1;
         }
+        let correctlyPlacedBoxes = initialCorrectBoxes;
         return;
     }
 
