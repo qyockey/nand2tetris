@@ -4,6 +4,7 @@ class Levels {
 
     function void init() {
         let game = Sokoban.init();
+        do game.titleScreen();
         return;
     }
 
@@ -12,33 +13,568 @@ class Levels {
         return;
     }
 
+    /* Key
+     * 󰟾  = wall
+     *   = player
+     *   = box
+     * 󰩷  = target
+     * 󰱒  = box on target
+     */
+
+    /* Level 1
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾        󰟾
+     * 󰟾        󰟾
+     * 󰟾         󰟾
+     * 󰟾   󰩷     󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
     function void level1() {
-        let board = GameBoard.new(6, 6, 1);
-        do board.set(0, 0, 4);
-        do board.set(0, 1, 4);
-        do board.set(0, 2, 4);
-        do board.set(0, 3, 4);
-        do board.set(0, 4, 4);
-        do board.set(0, 5, 4);
-        do board.set(1, 0, 4);
-        do board.set(2, 0, 4);
-        do board.set(3, 0, 4);
-        do board.set(4, 0, 4);
+        let board = GameBoard.new(6, 6, 0, 1);
+        do Levels.setBorder(board, 6, 6);
+        do board.set(2, 3, 2);
+        do board.set(4, 2, 1);
+        do board.setPlayerStartPos(1, 4);
+        do game.playLevel(1, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 2
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾         󰩷 󰟾
+     * 󰟾      󰟾 󰟾 󰟾
+     * 󰟾       󰩷 󰟾
+     * 󰟾      󰟾 󰟾 󰟾
+     * 󰟾         󰩷 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level2() {
+        let board = GameBoard.new(7, 7, 0, 3);
+        do Levels.setBorder(board, 7, 7);
+        do board.set(2, 4, 4);
+        do board.set(2, 5, 4);
+        do board.set(4, 4, 4);
+        do board.set(4, 5, 4);
+        do board.set(2, 2, 2);
+        do board.set(3, 2, 2);
+        do board.set(4, 2, 2);
+        do board.set(1, 5, 1);
+        do board.set(3, 5, 1);
+        do board.set(5, 5, 1);
+        do board.setPlayerStartPos(3, 3);
+        do game.playLevel(2, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 3
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾     󰟾 󰟾     󰟾
+     * 󰟾      󰩷󰟾     󰟾
+     * 󰟾     󰟾 󰟾 󰟾     󰟾
+     * 󰟾 󰟾   󰟾   󰟾   󰟾 󰟾
+     * 󰟾     󰟾 󰟾 󰟾     󰟾
+     * 󰟾               󰟾
+     * 󰟾 󰟾     󰟾     󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level3() {
+        let board = GameBoard.new(9, 9, 0, 1);
+        do Levels.setBorder(board, 9, 9);
+        do board.set(1, 1, 4);
+        do board.set(1, 4, 4);
         do board.set(1, 5, 4);
         do board.set(2, 5, 4);
+        do board.set(3, 3, 4);
+        do board.set(3, 4, 4);
         do board.set(3, 5, 4);
+        do board.set(4, 1, 4);
+        do board.set(4, 3, 4);
         do board.set(4, 5, 4);
-        do board.set(5, 0, 4);
-        do board.set(5, 1, 4);
-        do board.set(5, 2, 4);
+        do board.set(4, 7, 4);
         do board.set(5, 3, 4);
         do board.set(5, 4, 4);
         do board.set(5, 5, 4);
+        do board.set(7, 1, 4);
+        do board.set(7, 4, 4);
+        do board.set(7, 7, 4);
+
         do board.set(2, 3, 2);
-        do board.set(4, 2, 1);
-        do board.setPlayerStartPos(1,4);
-        do game.playLevel(1, board);
+
+        do board.set(2, 4, 1);
+
+        do board.setPlayerStartPos(2, 4);
+        do game.playLevel(3, board);
         do board.dispose();
+        return;
+    }
+
+    /* Level 4
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾   󰩷              󰟾
+     * 󰟾     󰟾   󰟾 󰟾   󰟾   󰟾
+     * 󰟾             󰟾 󰩷 󰟾
+     * 󰟾   󰩷 󰟾   󰟾 󰟾       󰟾
+     * 󰟾   󰟾 󰟾   󰟾 󰟾 󰟾    󰟾
+     * 󰟾         󰩷        󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level4() {
+        let board = GameBoard.new(8, 11, 0, 4);
+        do Levels.setBorder(board, 8, 11);
+        do board.set(2, 3, 4);
+        do board.set(2, 5, 4);
+        do board.set(2, 6, 4);
+        do board.set(2, 8, 4);
+        do board.set(3, 8, 4);
+        do board.set(4, 3, 4);
+        do board.set(4, 5, 4);
+        do board.set(4, 6, 4);
+        do board.set(5, 2, 4);
+        do board.set(5, 3, 4);
+        do board.set(5, 5, 4);
+        do board.set(5, 6, 4);
+        do board.set(5, 7, 4);
+
+        do board.set(3, 4, 2);
+        do board.set(3, 6, 2);
+        do board.set(5, 8, 2);
+        do board.set(6, 8, 2);
+
+        do board.set(1, 2, 1);
+        do board.set(3, 9, 1);
+        do board.set(4, 2, 1);
+        do board.set(6, 5, 1);
+
+        do board.setPlayerStartPos(1, 4);
+        do game.playLevel(4, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 5
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾     󰩷 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾  󰟾   󰟾 󰟾 󰟾
+     * 󰟾 󰩷            󰟾
+     * 󰟾  󰟾   󰟾   󰟾   󰟾
+     * 󰟾 󰩷          󰩷 󰟾
+     * 󰟾 󰟾 󰟾   󰟾  󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾       󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level5() {
+        let board = GameBoard.new(9, 9, 0, 4);
+        do Levels.setBorder(board, 9, 9);
+        do board.set(1, 1, 4);
+        do board.set(1, 2, 4);
+        do board.set(2, 1, 4);
+        do board.set(2, 2, 4);
+        do board.set(1, 6, 4);
+        do board.set(1, 7, 4);
+        do board.set(2, 6, 4);
+        do board.set(2, 7, 4);
+        do board.set(6, 1, 4);
+        do board.set(6, 2, 4);
+        do board.set(7, 1, 4);
+        do board.set(7, 2, 4);
+        do board.set(6, 6, 4);
+        do board.set(6, 7, 4);
+        do board.set(7, 6, 4);
+        do board.set(7, 7, 4);
+
+        do board.set(2, 4, 4);
+        do board.set(4, 2, 4);
+        do board.set(4, 4, 4);
+        do board.set(4, 6, 4);
+        do board.set(6, 4, 4);
+
+        do board.set(2, 3, 2);
+        do board.set(3, 2, 2);
+        do board.set(5, 3, 2);
+        do board.set(6, 5, 2);
+
+        do board.set(1, 5, 1);
+        do board.set(3, 1, 1);
+        do board.set(5, 1, 1);
+        do board.set(5, 7, 1);
+
+        do board.setPlayerStartPos(4, 1);
+        do game.playLevel(5, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 6
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾      󰟾
+     * 󰟾 󰟾 󰩷 󰟾   󰟾
+     * 󰟾         󰟾
+     * 󰟾        󰟾
+     * 󰟾   󰟾 󰱒 󰟾 󰟾
+     * 󰟾       󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level6() {
+        let board = GameBoard.new(8, 6, 1, 2);
+        do Levels.setBorder(board, 8, 6);
+        do board.set(1, 1, 4);
+        do board.set(2, 1, 4);
+        do board.set(2, 3, 4);
+        do board.set(5, 2, 4);
+        do board.set(5, 4, 4);
+        do board.set(6, 4, 4);
+
+        do board.set(4, 3, 2);
+        do board.set(5, 3, 3);
+        do board.set(2, 2, 1);
+
+        do board.setPlayerStartPos(1, 3);
+        do game.playLevel(6, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 7
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰩷   󰟾            󰩷 󰟾
+     * 󰟾       󰟾       󰟾   󰟾
+     * 󰟾   󰟾       󰟾 󰟾 󰟾 󰟾  󰟾
+     * 󰟾 󰩷                󰩷 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level7() {
+        let board = GameBoard.new(6, 12, 0, 4);
+        do Levels.setBorder(board, 6, 12);
+        do board.set(1, 3, 4);
+        do board.set(2, 5, 4);
+        do board.set(2, 9, 4);
+        do board.set(3, 2, 4);
+        do board.set(3, 6, 4);
+        do board.set(3, 7, 4);
+        do board.set(3, 8, 4);
+        do board.set(3, 9, 4);
+
+        do board.set(1, 9, 2);
+        do board.set(2, 3, 2);
+        do board.set(2, 4, 2);
+        do board.set(4, 5, 2);
+
+        do board.set(1, 1, 1);
+        do board.set(1, 10, 1);
+        do board.set(4, 1, 1);
+        do board.set(4, 10, 1);
+
+        do board.setPlayerStartPos(3, 10);
+        do game.playLevel(7, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 8
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾     󰟾 󰟾 󰟾
+     * 󰟾     󰟾 󰟾 󰟾
+     * 󰟾     󰟾 󰟾 󰟾
+     * 󰟾 󰩷    󰟾
+     * 󰟾     󰩷   󰟾
+     * 󰟾     󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level8() {
+        let board = GameBoard.new(8, 6, 0, 2);
+        do Levels.setBorder(board, 8, 6);
+        do board.set(1, 3, 4);
+        do board.set(1, 4, 4);
+        do board.set(2, 3, 4);
+        do board.set(2, 4, 4);
+        do board.set(3, 3, 4);
+        do board.set(3, 4, 4);
+        do board.set(6, 3, 4);
+        do board.set(6, 4, 4);
+
+        do board.set(4, 2, 2);
+        do board.set(4, 3, 2);
+
+        do board.set(4, 1, 1);
+        do board.set(5, 3, 1);
+
+        do board.setPlayerStartPos(4, 4);
+        do game.playLevel(8, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 9
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾     󰟾
+     * 󰟾 󰟾 󰟾       󰟾
+     * 󰟾 󰟾 󰟾   󰟾     󰟾
+     * 󰟾 󰟾     󰟾    󰟾
+     * 󰟾            󰟾
+     * 󰟾   󰩷 󰩷 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level9() {
+        let board = GameBoard.new(8, 8, 0, 3);
+        do Levels.setBorder(board, 8, 8);
+        do board.set(1, 1, 4);
+        do board.set(1, 2, 4);
+        do board.set(1, 3, 4);
+        do board.set(1, 4, 4);
+        do board.set(2, 1, 4);
+        do board.set(2, 2, 4);
+        do board.set(3, 1, 4);
+        do board.set(3, 2, 4);
+        do board.set(3, 4, 4);
+        do board.set(4, 1, 4);
+        do board.set(4, 4, 4);
+        do board.set(6, 4, 4);
+        do board.set(6, 5, 4);
+        do board.set(6, 6, 4);
+
+        do board.set(2, 4, 2);
+        do board.set(2, 5, 2);
+        do board.set(4, 5, 2);
+
+        do board.set(4, 3, 1);
+        do board.set(6, 2, 1);
+        do board.set(6, 3, 1);
+
+        do board.setPlayerStartPos(4, 6);
+        do game.playLevel(9, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Level 10
+     *
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾     󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾               󰟾 󰟾 󰟾 󰟾 󰟾     󰟾 󰟾 󰟾
+     * 󰟾 󰟾   󰟾 󰟾 󰟾      󰟾 󰟾 󰟾 󰟾 󰟾     󰟾 󰟾 󰟾
+     * 󰟾 󰟾   󰟾   󰟾 󰩷   󰩷   󰩷            󰟾 󰟾
+     * 󰟾 󰟾   󰟾   󰟾 󰟾  󰟾 󰟾 󰟾 󰟾 󰟾 󰟾         󰟾
+     * 󰟾 󰟾   󰟾 󰟾 󰟾 󰟾   󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾       󰟾
+     * 󰟾 󰟾   󰟾          󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾                 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾     󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     * 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾 󰟾
+     */
+    function void level10() {
+        let board = GameBoard.new(11, 18, 0, 3);
+        do Levels.setBorder(board, 11, 18);
+        do board.set(1, 1, 4);
+        do board.set(1, 4, 4);
+        do board.set(1, 5, 4);
+        do board.set(1, 6, 4);
+        do board.set(1, 7, 4);
+        do board.set(1, 8, 4);
+        do board.set(1, 9, 4);
+        do board.set(1, 10, 4);
+        do board.set(1, 11, 4);
+        do board.set(1, 12, 4);
+        do board.set(1, 13, 4);
+        do board.set(1, 14, 4);
+        do board.set(1, 15, 4);
+        do board.set(1, 16, 4);
+        do board.set(2, 1, 4);
+        do board.set(2, 8, 4);
+        do board.set(2, 9, 4);
+        do board.set(2, 10, 4);
+        do board.set(2, 11, 4);
+        do board.set(2, 12, 4);
+        do board.set(2, 15, 4);
+        do board.set(2, 16, 4);
+        do board.set(3, 1, 4);
+        do board.set(3, 3, 4);
+        do board.set(3, 4, 4);
+        do board.set(3, 5, 4);
+        do board.set(3, 8, 4);
+        do board.set(3, 9, 4);
+        do board.set(3, 10, 4);
+        do board.set(3, 11, 4);
+        do board.set(3, 12, 4);
+        do board.set(3, 15, 4);
+        do board.set(3, 16, 4);
+        do board.set(4, 1, 4);
+        do board.set(4, 3, 4);
+        do board.set(4, 5, 4);
+        do board.set(4, 16, 4);
+        do board.set(5, 1, 4);
+        do board.set(5, 3, 4);
+        do board.set(5, 5, 4);
+        do board.set(5, 6, 4);
+        do board.set(5, 8, 4);
+        do board.set(5, 9, 4);
+        do board.set(5, 10, 4);
+        do board.set(5, 11, 4);
+        do board.set(5, 12, 4);
+        do board.set(6, 1, 4);
+        do board.set(6, 3, 4);
+        do board.set(6, 4, 4);
+        do board.set(6, 5, 4);
+        do board.set(6, 6, 4);
+        do board.set(6, 8, 4);
+        do board.set(6, 9, 4);
+        do board.set(6, 10, 4);
+        do board.set(6, 11, 4);
+        do board.set(6, 12, 4);
+        do board.set(6, 13, 4);
+        do board.set(7, 3, 4);
+        do board.set(7, 9, 4);
+        do board.set(7, 10, 4);
+        do board.set(7, 11, 4);
+        do board.set(7, 12, 4);
+        do board.set(7, 13, 4);
+        do board.set(7, 14, 4);
+        do board.set(7, 15, 4);
+        do board.set(7, 16, 4);
+        do board.set(8, 9, 4);
+        do board.set(8, 10, 4);
+        do board.set(8, 11, 4);
+        do board.set(8, 12, 4);
+        do board.set(8, 13, 4);
+        do board.set(8, 14, 4);
+        do board.set(8, 15, 4);
+        do board.set(8, 16, 4);
+        do board.set(8, 17, 4);
+        do board.set(9, 1, 4);
+        do board.set(9, 2, 4);
+        do board.set(9, 3, 4);
+        do board.set(9, 4, 4);
+        do board.set(9, 7, 4);
+        do board.set(9, 8, 4);
+        do board.set(9, 9, 4);
+        do board.set(9, 10, 4);
+        do board.set(9, 11, 4);
+        do board.set(9, 12, 4);
+        do board.set(9, 13, 4);
+        do board.set(9, 14, 4);
+        do board.set(9, 15, 4);
+        do board.set(9, 16, 4);
+        do board.set(9, 17, 4);
+
+        do board.set(3, 6, 2);
+        do board.set(5, 7, 2);
+        do board.set(7, 6, 2);
+
+        do board.set(4, 6, 1);
+        do board.set(4, 8, 1);
+        do board.set(4, 10, 1);
+
+        do board.setPlayerStartPos(4, 14);
+        do game.playLevel(10, board);
+        do board.dispose();
+        return;
+    }
+
+    /* Win Screen
+     *
+     * 󰟾       󰟾   󰟾 󰟾     󰟾     󰟾
+     *   󰟾   󰟾   󰟾     󰟾   󰟾     󰟾
+     *     󰟾     󰟾     󰟾   󰟾     󰟾
+     *     󰟾     󰟾     󰟾   󰟾     󰟾
+     *     󰟾       󰟾 󰟾       󰟾 󰟾 
+     *
+     * 󰟾       󰟾   󰟾   󰟾     󰟾   󰟾
+     * 󰟾       󰟾   󰟾   󰟾 󰟾   󰟾   󰟾
+     * 󰟾   󰟾   󰟾   󰟾   󰟾   󰟾 󰟾   󰟾
+     * 󰟾   󰟾   󰟾   󰟾   󰟾     󰟾    
+     *   󰟾   󰟾     󰟾   󰟾     󰟾   󰟾
+     */
+    function void winScreen() {
+        let board = GameBoard.new(11, 14, 0, 1);
+        do board.set(0, 0, 4);
+        do board.set(0, 4, 4);
+        do board.set(0, 6, 4);
+        do board.set(0, 7, 4);
+        do board.set(0, 10, 4);
+        do board.set(0, 13, 4);
+        do board.set(1, 1, 4);
+        do board.set(1, 3, 4);
+        do board.set(1, 5, 4);
+        do board.set(1, 8, 4);
+        do board.set(1, 10, 4);
+        do board.set(1, 13, 4);
+        do board.set(2, 2, 4);
+        do board.set(2, 5, 4);
+        do board.set(2, 8, 4);
+        do board.set(2, 10, 4);
+        do board.set(2, 13, 4);
+        do board.set(3, 2, 4);
+        do board.set(3, 5, 4);
+        do board.set(3, 8, 4);
+        do board.set(3, 10, 4);
+        do board.set(3, 13, 4);
+        do board.set(4, 2, 4);
+        do board.set(4, 6, 4);
+        do board.set(4, 7, 4);
+        do board.set(4, 11, 4);
+        do board.set(4, 12, 4);
+        do board.set(6, 0, 4);
+        do board.set(6, 4, 4);
+        do board.set(6, 6, 4);
+        do board.set(6, 8, 4);
+        do board.set(6, 11, 4);
+        do board.set(6, 13, 4);
+        do board.set(7, 0, 4);
+        do board.set(7, 4, 4);
+        do board.set(7, 6, 4);
+        do board.set(7, 8, 4);
+        do board.set(7, 9, 4);
+        do board.set(7, 11, 4);
+        do board.set(7, 13, 4);
+        do board.set(8, 0, 4);
+        do board.set(8, 2, 4);
+        do board.set(8, 4, 4);
+        do board.set(8, 6, 4);
+        do board.set(8, 8, 4);
+        do board.set(8, 10, 4);
+        do board.set(8, 11, 4);
+        do board.set(8, 13, 4);
+        do board.set(9, 0, 4);
+        do board.set(9, 2, 4);
+        do board.set(9, 4, 4);
+        do board.set(9, 6, 4);
+        do board.set(9, 8, 4);
+        do board.set(9, 11, 4);
+        do board.set(10, 1, 4);
+        do board.set(10, 3, 4);
+        do board.set(10, 6, 4);
+        do board.set(10, 8, 4);
+        do board.set(10, 11, 4);
+        do board.set(10, 13, 4);
+
+        do Graphics.drawBoard(board);
+        do board.dispose();
+        return;
+    }
+
+    function void setBorder(GameBoard board, int numRows, int numCols) {
+        var int row, col;
+        let row = 0;
+        while (row < numRows) {
+            do board.set(row, 0, 4);
+            do board.set(row, numCols - 1, 4);
+            let row = row + 1;
+        }
+        let col = 1;
+        while (col < (numCols - 1)) {
+            do board.set(0, col, 4);
+            do board.set(numRows - 1, col, 4);
+            let col = col + 1;
+        }
         return;
     }
 }

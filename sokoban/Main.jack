@@ -2,6 +2,16 @@ class Main {
     function void main() {
         do Levels.init();
         do Levels.level1();
+        do Levels.level2();
+        do Levels.level3();
+        do Levels.level4();
+        do Levels.level5();
+        do Levels.level6();
+        do Levels.level7();
+        do Levels.level8();
+        do Levels.level9();
+        do Levels.level10();
+        do Levels.winScreen();
         do Levels.dispose();
         return;
     }
