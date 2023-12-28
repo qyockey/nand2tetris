@@ -4,9 +4,9 @@ UnexpectedTokenException::UnexpectedTokenException(const char *msg)
         : message(msg) {}
 
 UnexpectedTokenException::UnexpectedTokenException(const std::string &msg)
-        : message(msg.c_str()) {}
+        : message(msg) {}
 
 const char *UnexpectedTokenException::what() const noexcept {
-    return message;
+    return message.c_str();
 }
 

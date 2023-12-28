@@ -66,9 +66,6 @@ private:
     void expectKeywords(const std::vector<Token::Keyword>& keywords);
     void expectType(const Token::TokenType type);
     void expectTypes(const std::vector<Token::TokenType>& tokenTypes);
-    void expectToken(const std::vector<Token::TokenType>& types,
-            const std::vector<Token::Keyword>& keywords,
-            const std::vector<char>& symbols);
     void writeIndent();
     void writeOpeningTag(const std::string& tag);
     void writeClosingTag(const std::string& tag);

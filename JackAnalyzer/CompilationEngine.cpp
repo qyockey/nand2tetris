@@ -295,7 +295,7 @@ void CompilationEngine::expectSymbol(char symbol) {
     if (const Token token = tokenizer.getToken();
             token.getType() != Token::TokenType::SYMBOL
                 || token.getSymbol() != symbol) {
-        error("Expected symbol " + symbol);
+        error("Expected symbol '" + std::string(1, symbol) + "'");
     }
     writeIndent();
     xmlFile << "<symbol> " << Token::symbolToStr(symbol) << " </symbol>\n";
@@ -312,9 +312,13 @@ void CompilationEngine::expectSymbols(const std::vector<char>& symbols) {
             continue;
         }
     }
-    std::stringstream errorMessageStream("Expected symbol in [ ");
+    std::stringstream errorMessageStream("");
+    errorMessageStream << "Expected one of [";
     for (const char symbol : symbols) {
-        errorMessageStream << "'" << symbol << "' ";
+        errorMessageStream << "'" << symbol << "'";
+        if (symbol != symbols.back()) {
+            errorMessageStream << ", ";
+        }
     }
     errorMessageStream << "]";
     error(errorMessageStream.str());
@@ -342,9 +346,13 @@ void CompilationEngine::expectKeywords(const std::vector<Token::Keyword>& keywor
             continue;
         }
     }
-    std::stringstream errorMessageStream("Expected keyword in [ ");
+    std::stringstream errorMessageStream("");
+    errorMessageStream << "Expected one of [";
     for (auto const& keyword : keywords) {
-        errorMessageStream << Token::keywordToStr(keyword) << " ";
+        errorMessageStream << Token::keywordToStr(keyword);
+        if (keyword != keywords.back()) {
+            errorMessageStream << ", ";
+        }
     }
     errorMessageStream << "]";
     error(errorMessageStream.str());
@@ -371,33 +379,16 @@ void CompilationEngine::expectTypes(const std::vector<Token::TokenType>& tokenTy
             continue;
         }
     }
-    std::stringstream errorMessageStream("Expected type in [ ");
+    std::stringstream errorMessageStream("");
+    errorMessageStream << "Expected one of [";
     for (auto const& tokenType : tokenTypes) {
-        errorMessageStream << Token::tokenTypeToStr(tokenType) << " ";
+        errorMessageStream << Token::tokenTypeToStr(tokenType);
+        if (tokenType != tokenTypes.back()) {
+            errorMessageStream << ", ";
+        }
     }
     errorMessageStream << "]";
     error(errorMessageStream.str());
-}
-
-void CompilationEngine::expectToken(const std::vector<Token::TokenType>& types,
-        const std::vector<Token::Keyword>& keywords,
-        const std::vector<char>& symbols) {
-    try {
-        expectKeywords(keywords);
-    } catch (UnexpectedTokenException& e) {
-        (void) e;
-        try {
-            expectSymbols(symbols);
-        } catch (UnexpectedTokenException& e) {
-            (void) e;
-            try {
-                expectTypes(types);
-            } catch (UnexpectedTokenException& e) {
-                (void) e;
-                error("Expected token");
-            }
-        }
-    }
 }
 
 void CompilationEngine::writeIndent() {

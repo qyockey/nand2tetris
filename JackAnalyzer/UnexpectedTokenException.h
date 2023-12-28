@@ -9,7 +9,7 @@ public:
     explicit UnexpectedTokenException(const std::string& msg);
     const char *what() const noexcept override;
 private:
-    const char *message;
+    const std::string message;
 };
 
 #endif
