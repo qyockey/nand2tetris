@@ -1,162 +1,142 @@
+#include <array>
 #include <sstream>
 
+#include "Token.h"
 #include "JackTokenizer.h"
+#include "UnexpectedTokenException.h"
 
 #define SYMBOL_COUNT 19
 #define KEYWORD_COUNT 21
 
-JackTokenizer::JackTokenizer(std::string filePath)
-{
-    jackFile.open(filePath);
+JackTokenizer::JackTokenizer(const fs::path &filePath) : jackFile(filePath) {
+    advance();
+    advance();
 }
 
-JackTokenizer::~JackTokenizer()
-{
+JackTokenizer::~JackTokenizer() {
     jackFile.close();
 }
 
-bool JackTokenizer::hasMoreTokens()
-{
+bool JackTokenizer::hasMoreTokens() {
     trimWhiteSpaceAndComments();
     return jackFile.peek() != EOF;
 }
 
-void JackTokenizer::advance()
-{
-    static char symbols[] = {'{', '}', '(', ')', '[', ']', '.', ',', ';', '+',
-            '-', '*', '/', '&', '|', '<', '>', '=', '~'};
-    static std::string keywords[] = {"class", "constructor", "function",
-            "method", "field", "static", "var", "int", "char", "boolean",
-            "void", "true", "false", "null", "this", "let", "do", "if",
-            "else", "while", "return"};
-    std::stringstream tokenStream;
-    trimWhiteSpaceAndComments();
-    char nextChar = jackFile.get();
-    if (isdigit(nextChar)) {
-        tokenType = TokenType::INT_CONST;
-        tokenStream << nextChar;
-        while (isdigit(jackFile.peek())) {
-            nextChar = jackFile.get();
-            tokenStream << nextChar;
-        }
-    } else if (isalpha(nextChar)) {
-        tokenStream << nextChar;
-        while (isalnum(jackFile.peek())) {
-            nextChar = jackFile.get();
-            tokenStream << nextChar;
-        }
-        bool validKeyword = false;
-        for (int i = 0; i < KEYWORD_COUNT; i++) {
-            if (tokenStream.str().compare(keywords[i]) == EXIT_SUCCESS) {
-                validKeyword = true;
-                tokenType = TokenType::KEYWORD;
-                keywordType = (KeywordType) i;
-                break;
-            }
-        }
-        if (!validKeyword) {
-            tokenType = TokenType::IDENTIFIER;
-        }
-    } else if (nextChar == '"') {
-        tokenType = TokenType::STRING_CONST;
-        while ((nextChar = jackFile.get()) != '"') {
-            tokenStream << nextChar;
-        }
-    } else {
-        bool validSymbol = false;
-        for (int i = 0; i < SYMBOL_COUNT; i++) {
-            if (nextChar == symbols[i]) {
-                validSymbol = true;
-                tokenType = TokenType::SYMBOL;
-                tokenStream << nextChar;
-                break;
-            }
-        }
-        if (!validSymbol) {
-            // error
+void JackTokenizer::advance() {
+    if (hasMoreTokens()) {
+        token.setValue(nextToken.getValue());
+        token.setType(nextToken.getType());
+        token.setKeyword(nextToken.getKeyword());
+        if (auto nextChar = jackFile.peek(); isdigit(nextChar)) {
+            tokenizeIntConst();
+        } else if (isalpha(nextChar)) {
+            tokenizeKeywordOrIdentifier();
+        } else if (nextChar == '"') {
+            tokenizeStringConst();
+        } else {
+            tokenizeSymbol();
         }
     }
-    token = tokenStream.str();
 }
 
-JackTokenizer::TokenType JackTokenizer::getTokenType()
-{
-    return tokenType;
-}
-
-std::string JackTokenizer::keyword()
-{
-    if (tokenType != TokenType::KEYWORD) {
-        // error
-    }
+Token JackTokenizer::getToken() const {
     return token;
 }
 
-std::string JackTokenizer::symbol()
-{
-    if (tokenType != TokenType::SYMBOL) {
-        // error
-    }
-    if (token.compare("<") == EXIT_SUCCESS) {
-        return "&lt;";
-    } else if (token.compare(">") == EXIT_SUCCESS) {
-        return "&gt;";
-    } else if (token.compare("&") == EXIT_SUCCESS) {
-        return "&amp;";
-    }
-    return token;
+Token JackTokenizer::getNextToken() const {
+    return nextToken;
 }
 
-std::string JackTokenizer::identifier()
-{
-    if (tokenType != TokenType::IDENTIFIER) {
-        // error
-    }
-    return token;
+int JackTokenizer::getCurrentLine() const {
+    return currentLine;
 }
 
-std::string JackTokenizer::intVal()
-{
-    if (tokenType != TokenType::INT_CONST) {
-        // error
+char JackTokenizer::getNextChar() {
+    auto nextChar = (char) jackFile.get();
+    if (nextChar == '\n') {
+        currentLine++;
     }
-    std::stringstream ss(token);
-    int16_t val;
-    ss >> val;
-    if (ss.eof() && !ss.fail()) {
-        return token;
-    }
-    // error
-    return std::string();
+    return nextChar;
 }
 
-std::string JackTokenizer::stringVal()
-{
-    if (tokenType != TokenType::STRING_CONST) {
-        // error
-    }
-    return token;
-}
-
-void JackTokenizer::trimWhiteSpaceAndComments()
-{
-    char nextChar;
+void JackTokenizer::trimWhiteSpaceAndComments() {
+    int nextChar;
     do {
-        nextChar = jackFile.get();
-        if (nextChar == '/') {
-            if (jackFile.peek() == '/') {
-                do {
-                    nextChar = jackFile.get();
-                } while (nextChar != '\n');
-            } else if (jackFile.peek() == '*') {
-                do {
-                    nextChar = jackFile.get();
-                } while (!(nextChar == '*' && jackFile.peek() == '/'));
-                jackFile.get();
-                nextChar = jackFile.get();
-            }
+        nextChar = getNextChar();
+        if (nextChar == '/' && jackFile.peek() == '/') {
+            do {
+                nextChar = getNextChar();
+            } while (nextChar != '\n');
+        } else if (nextChar == '/' && jackFile.peek() == '*') {
+            do {
+                nextChar = getNextChar();
+            } while (!(nextChar == '*' && jackFile.peek() == '/'));
+            getNextChar();
+            nextChar = getNextChar();
         }
     } while (isspace(nextChar));
     jackFile.unget();
+}
+
+void JackTokenizer::tokenizeKeywordOrIdentifier() {
+    std::stringstream tokenStream;
+    do {
+        tokenStream << getNextChar();
+    } while (isalnum(jackFile.peek()) || jackFile.peek() == '_');
+    std::string str = tokenStream.str();
+    Token::Keyword keyword = Token::strToKeyword(str);
+    nextToken.setKeyword(keyword);
+    if (keyword == Token::Keyword::INVALID) {
+        nextToken.setType(Token::TokenType::IDENTIFIER);
+    } else {
+        nextToken.setType(Token::TokenType::KEYWORD);
+    }
+    nextToken.setValue(str);
+}
+
+void JackTokenizer::tokenizeIntConst() {
+    std::stringstream tokenStream;
+    nextToken.setType(Token::TokenType::INT_CONST);
+    nextToken.setKeyword(Token::Keyword::INVALID);
+    while (isdigit(jackFile.peek())) {
+        tokenStream << getNextChar();
+    }
+    int16_t val;
+    std::string str = tokenStream.str();
+    std::stringstream intValStream(str);
+    intValStream >> val;
+    if (!intValStream.eof() || intValStream.fail()) {
+            throw UnexpectedTokenException("Invalid integer constant '"
+                    + str + "'");
+    }
+    nextToken.setValue(str);
+}
+
+void JackTokenizer::tokenizeStringConst() {
+    nextToken.setType(Token::TokenType::STRING_CONST);
+    nextToken.setKeyword(Token::Keyword::INVALID);
+    std::stringstream tokenStream;
+    (void) getNextChar();
+    char nextChar;
+    while ((nextChar = getNextChar()) != '"') {
+        tokenStream << nextChar;
+    }
+    nextToken.setValue(tokenStream.str());
+}
+
+void JackTokenizer::tokenizeSymbol() {
+    char nextChar = getNextChar();
+    std::stringstream tokenStream;
+    for (char symbol : Token::allSymbols) {
+        if (nextChar == symbol) {
+            nextToken.setType(Token::TokenType::SYMBOL);
+            nextToken.setKeyword(Token::Keyword::INVALID);
+            nextToken.setValue(std::string(1, symbol));
+            tokenStream << nextChar;
+            return;
+        }
+    }
+    throw UnexpectedTokenException("Invalid symbol '"
+            + std::string(1, nextChar) + "'");
 }
 

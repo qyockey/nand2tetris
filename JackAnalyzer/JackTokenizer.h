@@ -2,33 +2,35 @@
 #define JACK_TOKENIZER_H
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
+#include "Token.h"
+
+namespace fs = std::filesystem;
+
 class JackTokenizer {
 public:
-    enum class TokenType {KEYWORD, SYMBOL, IDENTIFIER, INT_CONST, STRING_CONST};
-    enum class KeywordType {CLASS, CONSTRUCTOR, FUNCTION, METHOD, FIELD, STATIC,
-            VAR, INT, CHAR, BOOLEAN, VOID, TRUE, FALSE, NULL_, THIS, LET, DO,
-            IF, ELSE, WHILE, RETURN};
-    explicit JackTokenizer(std::string filePath);
+    explicit JackTokenizer(const fs::path& filePath);
     ~JackTokenizer();
     bool hasMoreTokens();
     void advance();
-    TokenType getTokenType();
-    std::string keyword();
-    std::string symbol();
-    std::string identifier();
-    std::string intVal();
-    std::string stringVal();
+    Token getToken() const;
+    Token getNextToken() const;
+    int getCurrentLine() const;
 
 private:
     std::ifstream jackFile;
-    std::string token;
-    TokenType tokenType;
-    KeywordType keywordType;
+    Token token;
+    Token nextToken;
+    int currentLine = 1;
+    char getNextChar();
     void trimWhiteSpaceAndComments();
-    
+    void tokenizeKeywordOrIdentifier();
+    void tokenizeIntConst();
+    void tokenizeStringConst();
+    void tokenizeSymbol();
 };
 
 #endif

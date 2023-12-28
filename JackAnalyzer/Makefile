@@ -201,6 +201,54 @@ JackTokenizer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/JackTokenizer.cpp.s
 .PHONY : JackTokenizer.cpp.s
 
+Token.o: Token.cpp.o
+.PHONY : Token.o
+
+# target to build an object file
+Token.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/Token.cpp.o
+.PHONY : Token.cpp.o
+
+Token.i: Token.cpp.i
+.PHONY : Token.i
+
+# target to preprocess a source file
+Token.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/Token.cpp.i
+.PHONY : Token.cpp.i
+
+Token.s: Token.cpp.s
+.PHONY : Token.s
+
+# target to generate assembly for a file
+Token.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/Token.cpp.s
+.PHONY : Token.cpp.s
+
+UnexpectedTokenException.o: UnexpectedTokenException.cpp.o
+.PHONY : UnexpectedTokenException.o
+
+# target to build an object file
+UnexpectedTokenException.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/UnexpectedTokenException.cpp.o
+.PHONY : UnexpectedTokenException.cpp.o
+
+UnexpectedTokenException.i: UnexpectedTokenException.cpp.i
+.PHONY : UnexpectedTokenException.i
+
+# target to preprocess a source file
+UnexpectedTokenException.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/UnexpectedTokenException.cpp.i
+.PHONY : UnexpectedTokenException.cpp.i
+
+UnexpectedTokenException.s: UnexpectedTokenException.cpp.s
+.PHONY : UnexpectedTokenException.s
+
+# target to generate assembly for a file
+UnexpectedTokenException.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/JackAnalyzer.dir/build.make CMakeFiles/JackAnalyzer.dir/UnexpectedTokenException.cpp.s
+.PHONY : UnexpectedTokenException.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -219,6 +267,12 @@ help:
 	@echo "... JackTokenizer.o"
 	@echo "... JackTokenizer.i"
 	@echo "... JackTokenizer.s"
+	@echo "... Token.o"
+	@echo "... Token.i"
+	@echo "... Token.s"
+	@echo "... UnexpectedTokenException.o"
+	@echo "... UnexpectedTokenException.i"
+	@echo "... UnexpectedTokenException.s"
 .PHONY : help
 
 
