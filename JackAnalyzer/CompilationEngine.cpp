@@ -20,17 +20,10 @@ void CompilationEngine::compileClass() {
     expectKeyword(Token::Keyword::CLASS);
     expectType(Token::TokenType::IDENTIFIER);
     expectSymbol('{');
-    while (tokenizer.getToken().matchesKeywords(std::vector<Token::Keyword> {
-        Token::Keyword::STATIC,
-        Token::Keyword::FIELD
-    })) {
+    while (tokenizer.getToken().matchesKeywords(Token::classVarTypes)) {
         compileClassVarDec();
     }
-    while (tokenizer.getToken().matchesKeywords(std::vector<Token::Keyword> {
-        Token::Keyword::CONSTRUCTOR,
-        Token::Keyword::FUNCTION,
-        Token::Keyword::METHOD,
-    })) {
+    while (tokenizer.getToken().matchesKeywords(Token::subroutineTypes)) {
         compileSubroutine();
     }
     expectSymbol('}');
@@ -39,10 +32,7 @@ void CompilationEngine::compileClass() {
 
 void CompilationEngine::compileClassVarDec() {
     writeOpeningTag("classVarDec");
-    expectKeywords(std::vector<Token::Keyword> {
-        Token::Keyword::STATIC,
-        Token::Keyword::FIELD
-    });
+    expectKeywords(Token::classVarTypes);
     compileType();
     expectType(Token::TokenType::IDENTIFIER);
     while (tokenizer.getToken().getSymbol() == ',') {
@@ -63,11 +53,7 @@ void CompilationEngine::compileType() {
 
 void CompilationEngine::compileSubroutine() {
     writeOpeningTag("subroutineDec");
-    expectKeywords(std::vector<Token::Keyword> {
-        Token::Keyword::CONSTRUCTOR,
-        Token::Keyword::FUNCTION,
-        Token::Keyword::METHOD,
-    });
+    expectKeywords(Token::subroutineTypes);
     if (tokenizer.getToken().getKeyword() == Token::Keyword::VOID) {
         expectKeyword(Token::Keyword::VOID);
     } else {

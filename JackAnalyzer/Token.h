@@ -18,8 +18,10 @@ public:
     static const std::vector<char> allSymbols;
     static const std::vector<char> binaryOperators;
     static const std::vector<char> unaryOperators;
+    static const std::vector<Keyword> classVarTypes;
     static const std::vector<Keyword> keywordConstants;
     static const std::vector<Keyword> primitiveTypes;
+    static const std::vector<Keyword> subroutineTypes;
     static std::string symbolToStr(char symbol);
     static Keyword strToKeyword(const std::string& keywordStr);
     static std::string keywordToStr(const Token::Keyword keyword);

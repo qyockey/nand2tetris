@@ -18,12 +18,20 @@ const std::vector<char> Token::unaryOperators {
     '-', '~'
 };
 
+const std::vector<Token::Keyword> Token::classVarTypes {
+    Keyword::STATIC, Keyword::FIELD
+};
+
 const std::vector<Token::Keyword> Token::keywordConstants {
     Keyword::TRUE, Keyword::FALSE, Keyword::NULL_, Keyword::THIS
 };
 
 const std::vector<Token::Keyword> Token::primitiveTypes {
     Keyword::BOOLEAN, Keyword::CHAR, Keyword::INT
+};
+
+const std::vector<Token::Keyword> Token::subroutineTypes {
+    Keyword::CONSTRUCTOR, Keyword::FUNCTION, Keyword::METHOD
 };
 
 std::string Token::symbolToStr(char symbol) {
