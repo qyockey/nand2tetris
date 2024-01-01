@@ -25,7 +25,6 @@ void CompilationEngine::compileClass() {
     while (tokenizer.getToken().matchesKeywords(Token::classVarKinds)) {
         compileClassVarDec();
     }
-    std::cout << "class " << className << '\n';
     while (tokenizer.getToken().matchesKeywords(Token::subroutineTypes)) {
         subroutineVars.reset();
         compileSubroutine();
@@ -92,8 +91,6 @@ void CompilationEngine::compileSubroutine() {
     }
     compileStatements();
     expectSymbol('}');
-    std::cout << "subroutine " << subroutineCall << '\n';
-    subroutineVars.print();
 }
 
 void CompilationEngine::compileSubroutineCall() {
@@ -108,13 +105,13 @@ void CompilationEngine::compileSubroutineCall() {
         subroutineName = tokenizer.getToken().getValue();
         expectType(Token::TokenType::IDENTIFIER);
         try {
-            // method or constructor in other class
+            // method in other class
             isMethod = true;
             Variable object = getVariable(firstIdentifier);
             subroutineClass = object.getType();
             vmWriter.writePush(object);
         } catch (const UnexpectedTokenException&) {
-            // static function
+            // static function or constructor
             isMethod = false;
             subroutineClass = firstIdentifier;
         }
@@ -272,7 +269,7 @@ void CompilationEngine::compileReturnStatement() {
 void CompilationEngine::compileIfStatement() {
     static unsigned labelNum = 0;
     std::string labelNumStr = std::to_string(labelNum);
-    std::string trueLabel = "IF_TRUE" + labelNumStr;
+    std::string trueLabel = "IF_TRUE_" + labelNumStr;
     std::string falseLabel = "IF_FALSE_" + labelNumStr;
     std::string endLabel = "END_IF_" + labelNumStr;
     labelNum++;
@@ -303,10 +300,14 @@ void CompilationEngine::compileTerm() {
     switch (tokenizer.getToken().getType()) {
         case Token::TokenType::IDENTIFIER:
             if (tokenizer.getNextToken().getSymbol() == '[') {
+                vmWriter.writePush(getVariable(tokenizer.getToken().getValue()));
                 expectType(Token::TokenType::IDENTIFIER);
                 expectSymbol('[');
                 compileExpression();
                 expectSymbol(']');
+                vmWriter.writeArithmetic(VmWriter::Command::ADD);
+                vmWriter.writePop(VmWriter::PopSegment::POINTER, 1);
+                vmWriter.writePush(VmWriter::PushSegment::THAT, 0);
             } else if (tokenizer.getNextToken().getSymbol() == '.') {
                 compileSubroutineCall();
             } else {
@@ -320,15 +321,15 @@ void CompilationEngine::compileTerm() {
                     expectIntConstant());
             break;
         case Token::TokenType::STRING_CONST:
-            expectType(Token::TokenType::STRING_CONST);
             vmWriter.writePush(VmWriter::PushSegment::CONSTANT,
-                    (unsigned) tokenizer.getToken().getValue().size());
+                    (unsigned) tokenizer.getToken().getValue().length());
             vmWriter.writeCall("String.new", 1);
             for (const char c : tokenizer.getToken().getValue()) {
                 vmWriter.writePush(VmWriter::PushSegment::CONSTANT,
-                        static_cast<unsigned>(c));
-            vmWriter.writeCall("String.appendChar", 2);
+                        (unsigned) (c));
+                vmWriter.writeCall("String.appendChar", 2);
             }
+            expectType(Token::TokenType::STRING_CONST);
             break;
         case Token::TokenType::KEYWORD:
             switch (tokenizer.getToken().getKeyword()) {
