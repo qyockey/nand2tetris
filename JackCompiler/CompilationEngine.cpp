@@ -308,7 +308,9 @@ void CompilationEngine::compileTerm() {
                 vmWriter.writeArithmetic(VmWriter::Command::ADD);
                 vmWriter.writePop(VmWriter::PopSegment::POINTER, 1);
                 vmWriter.writePush(VmWriter::PushSegment::THAT, 0);
-            } else if (tokenizer.getNextToken().getSymbol() == '.') {
+            } else if (const char nextSymbol = 
+                        tokenizer.getNextToken().getSymbol();
+                    nextSymbol == '.' || nextSymbol == '(') {
                 compileSubroutineCall();
             } else {
                 vmWriter.writePush(getVariable(
