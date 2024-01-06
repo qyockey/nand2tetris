@@ -29,6 +29,8 @@ private:
     int currentCol = 1;
     char getNextChar();
     void trimWhiteSpaceAndComments();
+    void trimInlineComment();
+    void trimMultiLineComment();
     void tokenizeKeywordOrIdentifier();
     void tokenizeIntConst();
     void tokenizeStringConst();

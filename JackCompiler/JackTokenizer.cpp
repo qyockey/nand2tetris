@@ -67,22 +67,42 @@ char JackTokenizer::getNextChar() {
 }
 
 void JackTokenizer::trimWhiteSpaceAndComments() {
-    int nextChar;
+    char nextChar;
     do {
         nextChar = getNextChar();
         if (nextChar == '/' && jackFile.peek() == '/') {
-            do {
-                nextChar = getNextChar();
-            } while (nextChar != '\n');
+            trimInlineComment();
+            nextChar = getNextChar();
         } else if (nextChar == '/' && jackFile.peek() == '*') {
-            do {
-                nextChar = getNextChar();
-            } while (!(nextChar == '*' && jackFile.peek() == '/'));
-            getNextChar();
+            trimMultiLineComment();
             nextChar = getNextChar();
         }
     } while (isspace(nextChar));
     jackFile.unget();
+}
+
+void JackTokenizer::trimInlineComment() {
+    char nextChar;
+    getNextChar();
+    do {
+        nextChar = getNextChar();
+        if (nextChar == EOF) {
+            throw UnexpectedTokenException("Unexpected EOF");
+        }
+    } while (nextChar != '\n');
+    jackFile.unget();
+}
+
+void JackTokenizer::trimMultiLineComment() {
+    char nextChar;
+    getNextChar();
+    do {
+        nextChar = getNextChar();
+        if (nextChar == EOF) {
+            throw UnexpectedTokenException("Unexpected EOF");
+        }
+    } while (!(nextChar == '*' && jackFile.peek() == '/'));
+    getNextChar();
 }
 
 void JackTokenizer::tokenizeKeywordOrIdentifier() {
@@ -113,8 +133,8 @@ void JackTokenizer::tokenizeIntConst() {
     std::stringstream intValStream(str);
     intValStream >> val;
     if (!intValStream.eof() || intValStream.fail()) {
-            throw UnexpectedTokenException("Invalid integer constant '"
-                    + str + "'");
+        throw UnexpectedTokenException("Invalid integer constant '"
+                + str + "'");
     }
     nextToken.setValue(str);
 }
@@ -125,7 +145,7 @@ void JackTokenizer::tokenizeStringConst() {
     std::stringstream tokenStream;
     (void) getNextChar();
     char nextChar;
-    while ((nextChar = getNextChar()) != '"') {
+    while ((nextChar = getNextChar()) != '"' && nextChar != EOF) {
         tokenStream << nextChar;
     }
     nextToken.setValue(tokenStream.str());
