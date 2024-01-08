@@ -9,7 +9,7 @@ VmWriter::~VmWriter() {
 }
 
 void VmWriter::writePush(const PushSegment segment, const unsigned count) {
-    static std::unordered_map<PushSegment, std::string> pushSegmentToStr = {
+    static std::unordered_map<PushSegment, std::string> pushSegmentToStr {
         {PushSegment::LOCAL, "local"},
         {PushSegment::ARG, "argument"},
         {PushSegment::THIS, "this"},
@@ -27,7 +27,7 @@ void VmWriter::writePush(const Variable& variable) {
 }
 
 void VmWriter::writePop(const PopSegment segment, const unsigned count) {
-    static std::unordered_map<PopSegment, std::string> popSegmentToStr = {
+    static std::unordered_map<PopSegment, std::string> popSegmentToStr {
         {PopSegment::LOCAL, "local"},
         {PopSegment::ARG, "argument"},
         {PopSegment::THIS, "this"},
@@ -44,7 +44,7 @@ void VmWriter::writePop(const Variable& variable) {
 }
 
 void VmWriter::writeArithmetic(const Command command) {
-    static std::unordered_map<Command, std::string> commandToStr = {
+    static std::unordered_map<Command, std::string> commandToStr {
         {Command::ADD, "add"},
 		{Command::SUB, "sub"},
 		{Command::AND, "and"},

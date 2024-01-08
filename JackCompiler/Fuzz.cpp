@@ -10,9 +10,9 @@ namespace fs = std::filesystem;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     try {
-        const auto input = reinterpret_cast<const char *>(data);
-        const fs::path jackFilePath = "./fuzz.jack";
-        const fs::path vmFilePath = "./fuzz.vm";
+        const auto input {reinterpret_cast<const char *>(data)};
+        const fs::path jackFilePath {"./fuzz.jack"};
+        const fs::path vmFilePath {"./fuzz.vm"};
         std::ofstream jackFile(jackFilePath);
         jackFile.write(input, size);
         jackFile.close();

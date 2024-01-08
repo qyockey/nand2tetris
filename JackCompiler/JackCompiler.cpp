@@ -12,7 +12,7 @@ static fs::path getVmFilePath(const fs::path& jackFilePath);
 namespace fs = std::filesystem;
 
 int main(int argc, char *argv[]) {
-    std::string compilationPathStr;
+    std::string compilationPathStr {};
     if (argc == 1) {
         compilationPathStr = ".";
     } else if (argc == 2) {
@@ -56,8 +56,8 @@ static void compileJackFile(const fs::path& jackFilePath) {
 }
 
 static fs::path getVmFilePath(const fs::path& jackFilePath) {
-    const std::string jackFilePathStr = jackFilePath.string();
-    std::string vmFilePathStr = jackFilePathStr;
+    const std::string jackFilePathStr {jackFilePath.string()};
+    std::string vmFilePathStr {jackFilePathStr};
     vmFilePathStr.replace(vmFilePathStr.find(".jack"), 5, ".vm");
     return fs::path(vmFilePathStr);
 }

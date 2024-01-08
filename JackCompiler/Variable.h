@@ -27,10 +27,10 @@ public:
     static Kind strToKind(const std::string& str);
 
 private:
-    std::string name;
-    std::string type;
-    Kind kind;
-    unsigned index;
+    std::string name {};
+    std::string type {};
+    Kind kind {};
+    unsigned index {};
 };
 
 #endif

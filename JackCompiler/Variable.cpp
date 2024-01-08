@@ -63,7 +63,7 @@ void Variable::setIndex(const unsigned newIndex) {
 }
 
 std::string Variable::kindToStr(const Variable::Kind kind) {
-    static std::unordered_map<Kind, std::string> kindToStr = {
+    static std::unordered_map<Kind, std::string> kindToStr {
         {Kind::ARG, "arg"},
         {Kind::FIELD, "field"},
         {Kind::STATIC, "static"},
@@ -73,7 +73,7 @@ std::string Variable::kindToStr(const Variable::Kind kind) {
 }
 
 Variable::Kind Variable::strToKind(const std::string& str) {
-    static std::unordered_map<std::string, Kind> strToKind = {
+    static std::unordered_map<std::string, Kind> strToKind {
         {"arg", Kind::ARG},
         {"field", Kind::FIELD},
         {"static", Kind::STATIC},
@@ -81,3 +81,4 @@ Variable::Kind Variable::strToKind(const std::string& str) {
     };
     return strToKind.at(str);
 }
+

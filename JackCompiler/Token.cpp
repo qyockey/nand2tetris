@@ -46,7 +46,7 @@ std::string Token::symbolToStr(char symbol) {
 }
 
 Token::Keyword Token::strToKeyword(const std::string& keywordStr) {
-    static std::unordered_map<std::string, Keyword> strToKeyword = {
+    static std::unordered_map<std::string, Keyword> strToKeyword {
         {"class", Keyword::CLASS},
         {"constructor", Keyword::CONSTRUCTOR},
         {"function", Keyword::FUNCTION},
@@ -77,7 +77,7 @@ Token::Keyword Token::strToKeyword(const std::string& keywordStr) {
 }
 
 std::string Token::keywordToStr(const Token::Keyword keyword) {
-    static std::unordered_map<Keyword, std::string> keywordToStr = {
+    static std::unordered_map<Keyword, std::string> keywordToStr {
         {Keyword::CLASS, "class"},
         {Keyword::CONSTRUCTOR, "constructor"},
         {Keyword::FUNCTION, "function"},
@@ -108,7 +108,7 @@ std::string Token::keywordToStr(const Token::Keyword keyword) {
 }
 
 std::string Token::tokenTypeToStr(const Token::TokenType tokenType) {
-    static std::unordered_map<Token::TokenType, std::string> tokenTypeToStr = {
+    static std::unordered_map<Token::TokenType, std::string> tokenTypeToStr {
         {Token::TokenType::KEYWORD, "keyword"},
         {Token::TokenType::SYMBOL, "symbol"},
         {Token::TokenType::IDENTIFIER, "identifier"},
@@ -137,7 +137,7 @@ std::string Token::getValue() const {
 }
 
 unsigned Token::getIntValue() const {
-    unsigned intVal = -1;
+    unsigned intVal {-1U};
     std::stringstream tokenStream(value);
     tokenStream >> intVal;
     if (tokenStream.eof() && !tokenStream.fail() && intVal != -1U) {

@@ -21,10 +21,10 @@ public:
 
 private:
     std::unordered_map<std::string, Variable> variableLookup;
-    unsigned numArgs = 0;
-    unsigned numFieldVars = 0;
-    unsigned numLocalVars = 0;
-    unsigned numStaticVars = 0;
+    unsigned numArgs {0};
+    unsigned numFieldVars {0};
+    unsigned numLocalVars {0};
+    unsigned numStaticVars {0};
 };
 
 #endif

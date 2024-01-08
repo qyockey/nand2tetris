@@ -22,9 +22,9 @@ public:
 private:
     JackTokenizer tokenizer;
     VmWriter vmWriter;
-    SymbolTable classVars;
-    SymbolTable subroutineVars;
-    std::string className;
+    SymbolTable classVars {};
+    SymbolTable subroutineVars {};
+    std::string className {};
     void compileClassVarDec();
     void compileType();
     void compileSubroutine();

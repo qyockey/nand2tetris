@@ -7,6 +7,7 @@
 
 #define SYMBOL_COUNT 19
 #define KEYWORD_COUNT 21
+#define CHAR_LEN 1
 
 JackTokenizer::JackTokenizer(const fs::path &filePath) : jackFile(filePath) {
     advance();
@@ -27,7 +28,7 @@ void JackTokenizer::advance() {
         token.setValue(nextToken.getValue());
         token.setType(nextToken.getType());
         token.setKeyword(nextToken.getKeyword());
-        if (auto nextChar = jackFile.peek(); isdigit(nextChar)) {
+        if (auto nextChar {jackFile.peek()}; isdigit(nextChar)) {
             tokenizeIntConst();
         } else if (isalpha(nextChar)) {
             tokenizeKeywordOrIdentifier();
@@ -56,7 +57,7 @@ int JackTokenizer::getCurrentCol() const {
 }
 
 char JackTokenizer::getNextChar() {
-    auto nextChar = (char) jackFile.get();
+    auto nextChar {(char) jackFile.get()};
     if (nextChar == '\n') {
         currentLine++;
         currentCol = 1;
@@ -67,7 +68,7 @@ char JackTokenizer::getNextChar() {
 }
 
 void JackTokenizer::trimWhiteSpaceAndComments() {
-    char nextChar;
+    char nextChar {};
     do {
         nextChar = getNextChar();
         if (nextChar == '/' && jackFile.peek() == '/') {
@@ -82,8 +83,8 @@ void JackTokenizer::trimWhiteSpaceAndComments() {
 }
 
 void JackTokenizer::trimInlineComment() {
-    char nextChar;
-    getNextChar();
+    char nextChar {};
+    (void) getNextChar();
     do {
         nextChar = getNextChar();
         if (nextChar == EOF) {
@@ -94,24 +95,24 @@ void JackTokenizer::trimInlineComment() {
 }
 
 void JackTokenizer::trimMultiLineComment() {
-    char nextChar;
-    getNextChar();
+    char nextChar {};
+    (void) getNextChar();
     do {
         nextChar = getNextChar();
         if (nextChar == EOF) {
             throw UnexpectedTokenException("Unexpected EOF");
         }
     } while (!(nextChar == '*' && jackFile.peek() == '/'));
-    getNextChar();
+    (void) getNextChar();
 }
 
 void JackTokenizer::tokenizeKeywordOrIdentifier() {
-    std::stringstream tokenStream;
+    std::stringstream tokenStream {};
     do {
         tokenStream << getNextChar();
     } while (isalnum(jackFile.peek()) || jackFile.peek() == '_');
-    std::string str = tokenStream.str();
-    Token::Keyword keyword = Token::strToKeyword(str);
+    std::string str {tokenStream.str()};
+    Token::Keyword keyword {Token::strToKeyword(str)};
     nextToken.setKeyword(keyword);
     if (keyword == Token::Keyword::INVALID) {
         nextToken.setType(Token::TokenType::IDENTIFIER);
@@ -122,14 +123,14 @@ void JackTokenizer::tokenizeKeywordOrIdentifier() {
 }
 
 void JackTokenizer::tokenizeIntConst() {
-    std::stringstream tokenStream;
+    std::stringstream tokenStream {};
     nextToken.setType(Token::TokenType::INT_CONST);
     nextToken.setKeyword(Token::Keyword::INVALID);
     while (isdigit(jackFile.peek())) {
         tokenStream << getNextChar();
     }
-    int16_t val;
-    std::string str = tokenStream.str();
+    int16_t val {};
+    std::string str {tokenStream.str()};
     std::stringstream intValStream(str);
     intValStream >> val;
     if (!intValStream.eof() || intValStream.fail()) {
@@ -142,9 +143,9 @@ void JackTokenizer::tokenizeIntConst() {
 void JackTokenizer::tokenizeStringConst() {
     nextToken.setType(Token::TokenType::STRING_CONST);
     nextToken.setKeyword(Token::Keyword::INVALID);
-    std::stringstream tokenStream;
+    std::stringstream tokenStream {};
     (void) getNextChar();
-    char nextChar;
+    char nextChar {};
     while ((nextChar = getNextChar()) != '"' && nextChar != EOF) {
         tokenStream << nextChar;
     }
@@ -152,18 +153,18 @@ void JackTokenizer::tokenizeStringConst() {
 }
 
 void JackTokenizer::tokenizeSymbol() {
-    char nextChar = getNextChar();
-    std::stringstream tokenStream;
+    char nextChar {getNextChar()};
+    std::stringstream tokenStream {};
     for (char symbol : Token::allSymbols) {
         if (nextChar == symbol) {
             nextToken.setType(Token::TokenType::SYMBOL);
             nextToken.setKeyword(Token::Keyword::INVALID);
-            nextToken.setValue(std::string(1, symbol));
+            nextToken.setValue(std::string(CHAR_LEN, symbol));
             tokenStream << nextChar;
             return;
         }
     }
     throw UnexpectedTokenException("Invalid symbol '"
-            + std::string(1, nextChar) + "'");
+            + std::string(CHAR_LEN, nextChar) + "'");
 }
 

@@ -43,9 +43,9 @@ public:
     bool matchesTerm() const;
 
 private:
-    std::string value;
-    TokenType type = TokenType::INVALID;
-    Keyword keyword = Keyword::INVALID;
+    std::string value {};
+    TokenType type {TokenType::INVALID};
+    Keyword keyword {Keyword::INVALID};
 };
 
 #endif

@@ -7,7 +7,7 @@ SymbolTable::SymbolTable() = default;
 
 void SymbolTable::define(const std::string& varName, const std::string& varType,
         const Variable::Kind varKind) {
-    unsigned varNumber;
+    unsigned varNumber {};
     switch (varKind) {
         case Variable::Kind::ARG:
             varNumber = numArgs;

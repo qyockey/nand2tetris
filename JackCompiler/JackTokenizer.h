@@ -25,8 +25,8 @@ private:
     std::ifstream jackFile;
     Token token;
     Token nextToken;
-    int currentLine = 1;
-    int currentCol = 1;
+    int currentLine {1};
+    int currentCol {1};
     char getNextChar();
     void trimWhiteSpaceAndComments();
     void trimInlineComment();
