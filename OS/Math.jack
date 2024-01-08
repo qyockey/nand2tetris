@@ -1,0 +1,162 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/**
+ * A library of commonly used mathematical functions.
+ * Note: Jack compilers implement multiplication and division using OS method calls.
+ */
+class Math {
+    static Array twoToThe, powerOfTwo;
+
+    /** Initializes the library. */
+    function void init() {
+        let twoToThe = Array.new(16);
+        let powerOfTwo = Array.new(16);
+        let twoToThe[00] = 1;
+        let twoToThe[01] = 2;
+        let twoToThe[02] = 4;
+        let twoToThe[03] = 8;
+        let twoToThe[04] = 16;
+        let twoToThe[05] = 32;
+        let twoToThe[06] = 64;
+        let twoToThe[07] = 128;
+        let twoToThe[08] = 256;
+        let twoToThe[09] = 512;
+        let twoToThe[10] = 1024;
+        let twoToThe[11] = 2048;
+        let twoToThe[12] = 4096;
+        let twoToThe[13] = 8192;
+        let twoToThe[14] = 16384;
+        let twoToThe[15] = ~32767;
+        return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+        if (x < 0) {
+            return -x;
+        }
+        return x;
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+        var int product, temp, currentBitMask, bitsChecked;
+        var boolean sign;
+        let sign = ((x < 0) & (y > 0)) | ((x > 0) & (y < 0));
+        // operate on positive numbers
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+        // make y <= x;
+        if (x < y) {
+            let temp = x;
+            let x = y;
+            let y = temp;
+        }
+        let currentBitMask = 1;
+        while (bitsChecked < y) {
+            let bitsChecked = bitsChecked + currentBitMask;
+            if (y & currentBitMask) {
+                let product = product + x;
+            }
+            let x = x + x;
+            let currentBitMask = currentBitMask + currentBitMask;
+        }
+        if (sign) {
+            return -product;
+        }
+        return product;
+    }
+
+    /** Returns the integer part of dividend/divisor.
+     *  When a Jack compiler detects the division operator '/' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions dividend/divisor and divide(dividend,divisor)
+     *  return the same value.
+     */
+    function int divide(int dividend, int divisor) {
+        var int quotient, bitNum, divisorPowerOfTwo;
+        var boolean sign;
+        if (divisor = 0) {
+            do Sys.error(4); // divide by zero error
+        }
+        // work with positive values
+        if (dividend < 0) {
+            let dividend = -dividend;
+            let sign = true;
+        }
+        if (divisor < 0) {
+            let sign = ~sign;
+            let divisor = -divisor;
+        }
+        if (dividend < divisor) {
+            return 0;
+        }
+
+        let divisorPowerOfTwo = divisor;
+        while (~((dividend - 1) < (divisorPowerOfTwo - 1))) {
+            let powerOfTwo[bitNum] = divisorPowerOfTwo;
+            let divisorPowerOfTwo = divisorPowerOfTwo + divisorPowerOfTwo;
+            let bitNum = bitNum + 1;
+        }
+        while (bitNum > 0) {
+            let bitNum = bitNum - 1;
+            let divisorPowerOfTwo = powerOfTwo[bitNum];
+            if (~((dividend - 1) < (divisorPowerOfTwo - 1))) {
+                let quotient = quotient + twoToThe[bitNum];
+                let dividend = dividend - divisorPowerOfTwo;
+            }
+        }
+        if (sign) {
+            return -quotient;
+        }
+        return quotient;
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int twoExponent, powerOfTwo, root, rootTest, rootTestSquared;
+        if (x < 0) {
+            do Sys.error(4); // negative sqrt error
+        }
+        let root = 0;
+        let twoExponent = 7;
+        let powerOfTwo = 128;
+        while (twoExponent > -1) {
+            let rootTest = root + powerOfTwo;
+            let rootTestSquared = rootTest * rootTest;
+            if (~((rootTestSquared > x) | (rootTestSquared < 0))) {
+                let root = rootTest;
+            }
+            let twoExponent = twoExponent - 1;
+            let powerOfTwo = twoToThe[twoExponent];
+        }
+        return root;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) {
+        if (a < b) {
+            return b;
+        }
+        return a;
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
+
+    function int twoToThe(int exp) {
+        return twoToThe[exp];
+    }
+}
